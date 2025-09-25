@@ -3,24 +3,33 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LinkGold - Заработок в Telegram</title>
+    <title>LinkGold - Платформа для заработка</title>
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            font-family: 'Segoe UI', system-ui, sans-serif;
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, Oxygen, Ubuntu, sans-serif;
+            transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            -webkit-tap-highlight-color: transparent;
         }
 
         :root {
-            --bg-primary: #0f0f23;
-            --bg-secondary: #1a1a3a;
+            --bg-primary: #050510;
+            --bg-secondary: #0a0a1a;
             --text-primary: #ffffff;
             --text-secondary: #8b9bda;
             --accent: #6366f1;
             --accent-hover: #4f46e5;
             --card-bg: #0f0f23;
-            --border: #2a2a4a;
+            --border: #1a1a3a;
+            --shadow: rgba(99, 102, 241, 0.1);
+            --nav-bg: rgba(15, 15, 35, 0.85);
+            --gold: #ffd700;
+            --gold-gradient: linear-gradient(135deg, #ffd700, #ffb700);
+            --purple-gradient: linear-gradient(135deg, #8b5cf6, #7c3aed);
+            --blue-gradient: linear-gradient(135deg, #3b82f6, #2563eb);
+            --teal-gradient: linear-gradient(135deg, #0ea5e9, #0369a1);
             --success: #10b981;
             --error: #ef4444;
             --warning: #f59e0b;
@@ -33,180 +42,360 @@
             padding: 16px;
             padding-bottom: 100px;
             line-height: 1.6;
+            background-image: 
+                radial-gradient(circle at 15% 50%, rgba(99, 102, 241, 0.05) 0%, transparent 25%),
+                radial-gradient(circle at 85% 30%, rgba(139, 92, 246, 0.05) 0%, transparent 25%);
         }
 
         .container {
             max-width: 100%;
             margin: 0 auto;
+            position: relative;
         }
 
         .header {
             text-align: center;
-            margin-bottom: 20px;
-            padding: 20px 0;
+            margin-bottom: 25px;
+            position: relative;
         }
 
         .logo {
-            font-size: 32px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 8px;
+            cursor: pointer;
+        }
+
+        .logo-text {
+            font-size: 28px;
             font-weight: 800;
-            background: linear-gradient(135deg, #ffd700, #ffb700);
+            background: var(--gold-gradient);
             -webkit-background-clip: text;
             background-clip: text;
             color: transparent;
-            margin-bottom: 8px;
+            letter-spacing: -0.5px;
+        }
+
+        .logo-icon {
+            width: 32px;
+            height: 32px;
+            margin-right: 10px;
+            border-radius: 8px;
+            overflow: hidden;
         }
 
         .slogan {
-            font-size: 14px;
+            font-size: 13px;
             color: var(--text-secondary);
+            font-weight: 500;
+            margin-bottom: 20px;
+        }
+
+        .video-icon {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 10px;
+        }
+
+        .video-container {
+            width: 100px;
+            height: 100px;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 10px;
+        }
+
+        .video-medium {
+            width: 40px;
+            height: 40px;
+        }
+
+        .video-large {
+            width: 56px;
+            height: 56px;
         }
 
         .card {
             background: var(--card-bg);
-            border-radius: 16px;
+            border-radius: 20px;
             padding: 20px;
             margin-bottom: 16px;
             border: 1px solid var(--border);
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 6px 25px rgba(0, 0, 0, 0.2);
+            backdrop-filter: blur(10px);
         }
 
-        .btn {
-            background: var(--accent);
-            color: white;
-            border: none;
-            padding: 12px 20px;
-            border-radius: 12px;
-            font-size: 14px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
+        .hero-banner {
+            border-radius: 20px;
+            overflow: hidden;
+            margin-bottom: 20px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+            position: relative;
+            height: 180px;
+            background: linear-gradient(45deg, #0f0f23, #1a1a3a);
         }
 
-        .btn:hover {
-            background: var(--accent-hover);
-            transform: translateY(-1px);
-        }
-
-        .btn-primary {
-            background: linear-gradient(135deg, #ffd700, #ffb700);
-            color: #000;
-            font-weight: 700;
+        .hero-banner video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
         }
 
         .stats-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
+            display: flex;
             gap: 12px;
             margin-bottom: 20px;
+            justify-content: space-between;
         }
 
         .stat-card {
-            background: linear-gradient(135deg, #6366f1, #4f46e5);
-            border-radius: 12px;
-            padding: 16px;
+            border-radius: 18px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
             text-align: center;
-            color: white;
+            min-height: 120px;
+            width: 48%;
+            position: relative;
+            overflow: hidden;
+            cursor: pointer;
+            flex: 1;
+            transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+            transform: translateZ(0);
         }
 
-        .stat-value {
-            font-size: 24px;
-            font-weight: 700;
-            margin-bottom: 4px;
+        .stat-card:active {
+            transform: scale(0.97) translateZ(0);
+        }
+
+        .balance-card {
+            background: var(--purple-gradient);
+            box-shadow: 0 6px 20px rgba(139, 92, 246, 0.2);
+        }
+
+        .support-card {
+            background: var(--teal-gradient);
+            box-shadow: 0 6px 20px rgba(14, 165, 233, 0.2);
+        }
+
+        .stat-icon {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 10px;
         }
 
         .stat-label {
             font-size: 12px;
-            opacity: 0.9;
-        }
-
-        .task-card {
-            background: var(--card-bg);
-            border-radius: 12px;
-            padding: 16px;
-            margin-bottom: 12px;
-            border: 1px solid var(--border);
-        }
-
-        .task-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: start;
-            margin-bottom: 12px;
-        }
-
-        .task-title {
-            font-size: 16px;
             font-weight: 600;
-            margin-bottom: 4px;
+            color: rgba(255, 255, 255, 0.95);
+            margin-bottom: 8px;
         }
 
-        .task-category {
-            background: var(--bg-secondary);
-            padding: 4px 8px;
-            border-radius: 6px;
-            font-size: 11px;
-            color: var(--text-secondary);
+        .stat-value {
+            font-size: 22px;
+            font-weight: 800;
+            color: white;
+            line-height: 1.2;
         }
 
-        .task-price {
+        .exchange-card {
+            background: var(--gold-gradient);
+            color: #000;
+            border-radius: 18px;
+            padding: 20px;
+            margin-bottom: 16px;
+            text-align: center;
+            cursor: pointer;
+            box-shadow: 0 6px 20px rgba(255, 215, 0, 0.2);
+        }
+
+        .exchange-card:active {
+            transform: scale(0.98);
+        }
+
+        .exchange-icon {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .exchange-title {
             font-size: 18px;
             font-weight: 700;
-            color: #ffd700;
+            margin-bottom: 6px;
         }
 
-        .task-description {
+        .exchange-text {
             font-size: 13px;
+            opacity: 0.9;
+            line-height: 1.3;
+        }
+
+        .post-promo {
+            background: var(--card-bg);
+            border-radius: 18px;
+            padding: 20px;
+            text-align: center;
+            border: 1px solid var(--border);
+            box-shadow: 0 6px 25px rgba(0, 0, 0, 0.15);
+        }
+
+        .post-icon {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 14px;
+        }
+
+        .post-title {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            color: var(--text-primary);
+        }
+
+        .post-description {
             color: var(--text-secondary);
             margin-bottom: 16px;
+            font-size: 13px;
             line-height: 1.4;
         }
 
-        .task-footer {
-            display: flex;
-            justify-content: space-between;
+        .btn {
+            display: inline-block;
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 14px 24px;
+            border-radius: 14px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+            transform: translateZ(0);
+        }
+
+        .btn:active {
+            transform: scale(0.95) translateZ(0);
+        }
+
+        .btn-primary {
+            background: var(--gold-gradient);
+            color: #000;
+            font-weight: 700;
+            box-shadow: 0 4px 12px rgba(255, 204, 0, 0.25);
+        }
+
+        .btn-full {
+            width: 100%;
+        }
+
+        .btn-success {
+            background: var(--success);
+        }
+
+        .btn-warning {
+            background: var(--warning);
+        }
+
+        .btn-error {
+            background: var(--error);
+        }
+
+        .tasks-button-container {
+            margin: 25px 0;
+            text-align: center;
+        }
+
+        .tasks-btn {
+            background: var(--purple-gradient);
+            color: white;
+            border: none;
+            padding: 14px 20px;
+            border-radius: 16px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 6px 20px rgba(139, 92, 246, 0.25);
+            display: inline-flex;
             align-items: center;
+            gap: 10px;
         }
 
-        .task-time {
-            font-size: 12px;
-            color: var(--text-secondary);
+        .tasks-btn:active {
+            transform: scale(0.96);
         }
 
-        .nav {
+        .bottom-nav {
             position: fixed;
             bottom: 16px;
             left: 16px;
             right: 16px;
-            background: var(--card-bg);
-            border-radius: 12px;
-            padding: 12px;
+            background: var(--nav-bg);
+            border-radius: 18px;
+            padding: 14px;
             display: flex;
             justify-content: space-around;
+            box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.3);
             border: 1px solid var(--border);
+            z-index: 1000;
+            backdrop-filter: blur(15px);
         }
 
         .nav-item {
             text-align: center;
             cursor: pointer;
-            padding: 8px;
-            border-radius: 8px;
+            padding: 8px 12px;
+            border-radius: 14px;
             flex: 1;
             opacity: 0.7;
-            transition: all 0.3s ease;
+            transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
         }
 
         .nav-item.active {
             background: var(--accent);
             opacity: 1;
+            box-shadow: 0 0 20px rgba(99, 102, 241, 0.25);
+            transform: translateY(-2px);
+        }
+
+        .nav-item.active .nav-icon,
+        .nav-item.active .nav-label {
+            color: white;
+        }
+
+        .nav-item.notification {
+            position: relative;
+        }
+
+        .nav-item.notification::after {
+            content: '';
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            width: 8px;
+            height: 8px;
+            background: var(--error);
+            border-radius: 50%;
         }
 
         .nav-icon {
             font-size: 20px;
             margin-bottom: 4px;
+            color: var(--text-secondary);
         }
 
         .nav-label {
             font-size: 11px;
+            color: var(--text-secondary);
+            font-weight: 500;
         }
 
         .modal {
@@ -215,21 +404,33 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background: rgba(15, 15, 35, 0.95);
-            z-index: 1000;
+            background: rgba(5, 5, 16, 0.95);
+            z-index: 2000;
             display: flex;
+            flex-direction: column;
             justify-content: center;
             align-items: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
             padding: 20px;
+        }
+
+        .modal.active {
+            opacity: 1;
+            pointer-events: all;
         }
 
         .modal-content {
             background: var(--card-bg);
-            border-radius: 16px;
+            border-radius: 20px;
             padding: 24px;
+            width: 90%;
             max-width: 400px;
-            width: 100%;
             border: 1px solid var(--border);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+            max-height: 80vh;
+            overflow-y: auto;
         }
 
         .modal-header {
@@ -237,11 +438,16 @@
             justify-content: space-between;
             align-items: center;
             margin-bottom: 20px;
+            position: relative;
         }
 
         .modal-title {
             font-size: 20px;
             font-weight: 700;
+            background: var(--gold-gradient);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
         }
 
         .modal-close {
@@ -250,70 +456,1697 @@
             font-size: 24px;
             color: var(--text-secondary);
             cursor: pointer;
+            position: absolute;
+            top: -10px;
+            right: -10px;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background: var(--card-bg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
-        .tab-content {
-            display: none;
-        }
-
-        .tab-content.active {
-            display: block;
-        }
-
-        .loading {
+        .modal-body {
+            margin-bottom: 20px;
             text-align: center;
-            padding: 40px;
+        }
+
+        .balance-amount {
+            font-size: 48px;
+            font-weight: 800;
+            margin: 30px 0;
+            background: var(--gold-gradient);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        .profile-btn {
+            background: var(--purple-gradient);
+            color: white;
+            border: none;
+            padding: 16px 24px;
+            border-radius: 14px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            text-align: center;
+            margin-top: 20px;
+            box-shadow: 0 6px 20px rgba(139, 92, 246, 0.25);
+        }
+
+        .chat-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(5, 5, 16, 0.95);
+            z-index: 2000;
+            display: flex;
+            flex-direction: column;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .chat-modal.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .chat-header {
+            background: var(--card-bg);
+            padding: 16px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .chat-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: var(--purple-gradient);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .chat-avatar .video-icon {
+            width: 30px;
+            height: 30px;
+        }
+
+        .chat-info {
+            flex: 1;
+        }
+
+        .chat-name {
+            font-weight: 600;
+            font-size: 16px;
+        }
+
+        .chat-status {
+            font-size: 13px;
             color: var(--text-secondary);
         }
 
-        .error {
-            background: var(--error);
+        .chat-close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            color: var(--text-secondary);
+            cursor: pointer;
+        }
+
+        .chat-messages {
+            flex: 1;
+            padding: 16px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .message {
+            max-width: 80%;
+            padding: 12px 16px;
+            border-radius: 16px;
+            margin-bottom: 4px;
+        }
+
+        .message-admin {
+            background: var(--card-bg);
+            align-self: flex-start;
+            border-bottom-left-radius: 4px;
+        }
+
+        .message-user {
+            background: var(--accent);
+            align-self: flex-end;
+            border-bottom-right-radius: 4px;
+        }
+
+        .chat-input {
+            padding: 12px 16px;
+            background: var(--card-bg);
+            border-top: 1px solid var(--border);
+            display: flex;
+            gap: 12px;
+        }
+
+        .chat-input input {
+            flex: 1;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 12px 16px;
+            color: var(--text-primary);
+            font-size: 14px;
+        }
+
+        .chat-send {
+            background: var(--accent);
+            border: none;
+            border-radius: 50%;
+            width: 44px;
+            height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             color: white;
-            padding: 12px;
-            border-radius: 8px;
-            margin-bottom: 16px;
+            cursor: pointer;
+        }
+
+        .prices-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(5, 5, 16, 0.95);
+            z-index: 2000;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .prices-modal.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .prices-content {
+            background: var(--card-bg);
+            border-radius: 20px;
+            padding: 24px;
+            width: 90%;
+            max-width: 400px;
+            border: 1px solid var(--border);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+        }
+
+        .prices-title {
+            text-align: center;
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 20px;
+            background: var(--gold-gradient);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        .price-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .price-item {
+            background: var(--bg-secondary);
+            padding: 16px;
+            border-radius: 14px;
+            display: flex;
+            justify-content: between;
+            align-items: center;
+            border: 1px solid var(--border);
+        }
+
+        .price-time {
+            font-weight: 600;
+            flex: 1;
+        }
+
+        .price-amount {
+            background: var(--gold-gradient);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            font-weight: 800;
+            font-size: 18px;
+        }
+
+        .prices-btn {
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 16px;
+            border-radius: 14px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
             text-align: center;
         }
 
-        .success {
-            background: var(--success);
-            color: white;
-            padding: 12px;
+        .profile-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+            padding: 16px;
+            background: var(--card-bg);
+            border-radius: 20px;
+            border: 1px solid var(--border);
+        }
+        
+        .profile-avatar {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            overflow: hidden;
+            margin-right: 16px;
+            position: relative;
+            border: 3px solid var(--accent);
+        }
+        
+        .profile-avatar video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .profile-info {
+            flex: 1;
+        }
+        
+        .profile-name {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+        
+        .profile-id {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+        
+        .profile-level {
+            display: inline-block;
+            background: var(--purple-gradient);
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        
+        .profile-stats {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        
+        .profile-stat {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 16px;
+            text-align: center;
+            border: 1px solid var(--border);
+        }
+        
+        .stat-value {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 4px;
+            background: var(--gold-gradient);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+        
+        .stat-label {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+        
+        .profile-section {
+            margin-bottom: 20px;
+        }
+        
+        .section-title {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 12px;
+            padding-left: 8px;
+            border-left: 4px solid var(--accent);
+        }
+        
+        .profile-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        
+        .profile-action {
+            display: flex;
+            align-items: center;
+            padding: 16px;
+            background: var(--card-bg);
+            border-radius: 16px;
+            border: 1px solid var(--border);
+            cursor: pointer;
+        }
+        
+        .action-icon {
+            width: 24px;
+            height: 24px;
+            margin-right: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--blue-gradient);
             border-radius: 8px;
+            color: white;
+        }
+        
+        .action-text {
+            flex: 1;
+            font-size: 15px;
+            font-weight: 500;
+        }
+        
+        .action-arrow {
+            color: var(--text-secondary);
+        }
+        
+        .level-progress {
+            margin-top: 20px;
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 16px;
+            border: 1px solid var(--border);
+        }
+        
+        .level-title {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+        
+        .level-name {
+            font-weight: 600;
+        }
+        
+        .level-count {
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+        
+        .progress-bar {
+            height: 8px;
+            background: var(--bg-secondary);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 8px;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: var(--gold-gradient);
+            border-radius: 4px;
+            width: 0%;
+        }
+        
+        .level-info {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+        
+        .referral-system {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 16px;
+            margin: 20px 0;
+            border: 1px solid var(--border);
+        }
+        
+        .referral-title {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 12px;
+            text-align: center;
+        }
+        
+        .referral-code {
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            padding: 12px;
             margin-bottom: 16px;
             text-align: center;
+            border: 1px solid var(--border);
+        }
+        
+        .code-value {
+            font-size: 20px;
+            font-weight: 700;
+            letter-spacing: 2px;
+            margin-bottom: 8px;
+            background: var(--gold-gradient);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+        
+        .copy-btn {
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+        }
+        
+        .referral-stats {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+        
+        .referral-stat {
+            background: var(--bg-secondary);
+            border-radius: 10px;
+            padding: 12px;
+            text-align: center;
+            border: 1px solid var(--border);
+        }
+        
+        .referral-value {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+        
+        .referral-label {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+        
+        .referral-info {
+            font-size: 13px;
+            color: var(--text-secondary);
+            text-align: center;
+            margin-top: 10px;
+        }
+        
+        .about-content {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 1px solid var(--border);
+        }
+        
+        .about-title {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 16px;
+            text-align: center;
+            background: var(--gold-gradient);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+        
+        .about-text {
+            font-size: 14px;
+            line-height: 1.6;
+            color: var(--text-secondary);
+            margin-bottom: 16px;
+        }
+        
+        .about-features {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        
+        .about-feature {
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            padding: 12px;
+            text-align: center;
+            border: 1px solid var(--border);
+        }
+        
+        .feature-icon {
+            font-size: 24px;
+            margin-bottom: 8px;
+        }
+        
+        .feature-text {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+        
+        .about-footer {
+            text-align: center;
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-top: 20px;
+        }
+        
+        /* Стили для вкладки заданий */
+        .tasks-tab {
+            padding-bottom: 20px;
+        }
+        
+        .tasks-tabs {
+            display: flex;
+            margin-bottom: 20px;
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 8px;
+            border: 1px solid var(--border);
+        }
+        
+        .task-tab {
+            flex: 1;
+            text-align: center;
+            padding: 10px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        
+        .task-tab.active {
+            background: var(--accent);
+            color: white;
+        }
+        
+        .task-tab.notification {
+            position: relative;
+            color: var(--error);
+        }
+        
+        .task-tab.notification::after {
+            content: '';
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            width: 8px;
+            height: 8px;
+            background: var(--error);
+            border-radius: 50%;
+        }
+        
+        .search-container {
+            margin-bottom: 20px;
+            position: relative;
+        }
+        
+        .search-input {
+            width: 100%;
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 14px 16px 14px 45px;
+            color: var(--text-primary);
+            font-size: 14px;
+        }
+        
+        .search-icon {
+            position: absolute;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-secondary);
+        }
+        
+        .filters-container {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            overflow-x: auto;
+            padding-bottom: 5px;
+        }
+        
+        .filter-btn {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 8px 16px;
+            font-size: 12px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            white-space: nowrap;
+        }
+        
+        .filter-btn.active {
+            background: var(--accent);
+            color: white;
+            border-color: var(--accent);
+        }
+        
+        .tasks-grid {
+            display: grid;
+            gap: 16px;
+        }
+        
+        .task-card {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 16px;
+            border: 1px solid var(--border);
+            cursor: pointer;
+            transition: transform 0.3s ease;
+        }
+        
+        .task-card:active {
+            transform: scale(0.98);
+        }
+        
+        .task-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 12px;
+        }
+        
+        .task-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+        
+        .task-category {
+            font-size: 12px;
+            color: var(--text-secondary);
+            background: var(--bg-secondary);
+            padding: 2px 8px;
+            border-radius: 8px;
+            display: inline-block;
+        }
+        
+        .task-price {
+            font-size: 18px;
+            font-weight: 700;
+            background: var(--gold-gradient);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+        
+        .task-description {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-bottom: 16px;
+            line-height: 1.4;
+        }
+        
+        .task-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .task-time {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+        
+        .task-btn {
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 10px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        
+        .no-tasks {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-secondary);
+        }
+        
+        .no-tasks-icon {
+            font-size: 40px;
+            margin-bottom: 16px;
+        }
+        
+        /* Модальное окно задания */
+        .task-modal-content {
+            background: var(--card-bg);
+            border-radius: 20px;
+            padding: 24px;
+            width: 90%;
+            max-width: 400px;
+            border: 1px solid var(--border);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+        }
+        
+        .task-modal-title {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 16px;
+            background: var(--gold-gradient);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+        
+        .task-modal-category {
+            display: inline-block;
+            background: var(--bg-secondary);
+            padding: 4px 12px;
+            border-radius: 8px;
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-bottom: 16px;
+        }
+        
+        .task-modal-price {
+            font-size: 24px;
+            font-weight: 800;
+            margin: 16px 0;
+            background: var(--gold-gradient);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            text-align: center;
+        }
+        
+        .task-modal-description {
+            font-size: 14px;
+            color: var(--text-secondary);
+            line-height: 1.6;
+            margin-bottom: 24px;
+        }
+        
+        .task-modal-details {
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 24px;
+        }
+        
+        .task-detail {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+        
+        .task-detail:last-child {
+            margin-bottom: 0;
+        }
+        
+        .task-detail-label {
+            color: var(--text-secondary);
+        }
+        
+        .task-detail-value {
+            font-weight: 600;
+        }
+        
+        .task-modal-buttons {
+            display: flex;
+            gap: 12px;
+        }
+        
+        .task-modal-cancel {
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            border: 1px solid var(--border);
+            padding: 12px;
+            border-radius: 12px;
+            flex: 1;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        
+        .task-modal-start {
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 12px;
+            flex: 1;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        
+        /* Стили для подтверждения задания */
+        .confirmation-task {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 16px;
+            border: 1px solid var(--border);
+            margin-bottom: 16px;
+        }
+        
+        .confirmation-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+        
+        .confirmation-title {
+            font-size: 16px;
+            font-weight: 600;
+        }
+        
+        .confirmation-price {
+            font-size: 18px;
+            font-weight: 700;
+            background: var(--gold-gradient);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+        
+        .confirmation-question {
+            font-size: 14px;
+            margin-bottom: 16px;
+            text-align: center;
+        }
+        
+        .confirmation-buttons {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+        
+        .confirmation-no {
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            border: 1px solid var(--border);
+            padding: 10px;
+            border-radius: 10px;
+            flex: 1;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        
+        .confirmation-yes {
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 10px;
+            border-radius: 10px;
+            flex: 1;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        
+        .confirmation-rejected {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            padding: 12px;
+            border-radius: 10px;
+            margin-top: 12px;
+        }
+        
+        .confirmation-rejected-text {
+            color: var(--error);
+            font-size: 14px;
+            margin-bottom: 8px;
+        }
+        
+        .confirmation-support {
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+        }
+        
+        /* Стили для панели администратора */
+        .admin-panel {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 1px solid var(--border);
+        }
+        
+        .admin-title {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 16px;
+            text-align: center;
+            background: var(--gold-gradient);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+        
+        .admin-buttons {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        
+        .admin-btn {
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            text-align: center;
+        }
+        
+        .admin-form {
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 16px;
+        }
+        
+        .admin-input {
+            width: 100%;
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 12px;
+            color: var(--text-primary);
+            font-size: 14px;
+            margin-bottom: 12px;
+        }
+        
+        .admin-textarea {
+            width: 100%;
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 12px;
+            color: var(--text-primary);
+            font-size: 14px;
+            margin-bottom: 12px;
+            min-height: 100px;
+            resize: vertical;
+        }
+        
+        .admin-submit {
+            background: var(--success);
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+        }
+        
+        .admin-task-list {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .admin-task-item {
+            background: var(--card-bg);
+            border-radius: 10px;
+            padding: 12px;
+            margin-bottom: 10px;
+            border: 1px solid var(--border);
+        }
+        
+        .admin-task-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        
+        .admin-task-title {
+            font-size: 14px;
+            font-weight: 600;
+        }
+        
+        .admin-task-actions {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .admin-task-delete {
+            background: var(--error);
+            color: white;
+            border: none;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 12px;
+            cursor: pointer;
+        }
+        
+        .admin-task-approve {
+            background: var(--success);
+            color: white;
+            border: none;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 12px;
+            cursor: pointer;
+        }
+        
+        .admin-task-reject {
+            background: var(--error);
+            color: white;
+            border: none;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 12px;
+            cursor: pointer;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .fade-in {
+            animation: fadeIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        @media (min-width: 768px) {
+            .profile-stats {
+                grid-template-columns: repeat(4, 1fr);
+            }
+            
+            .referral-stats {
+                grid-template-columns: repeat(4, 1fr);
+            }
+            
+            .about-features {
+                grid-template-columns: repeat(4, 1fr);
+            }
+            
+            .tasks-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .admin-buttons {
+                grid-template-columns: repeat(3, 1fr);
+            }
         }
     </style>
 </head>
 <body>
+
     <div class="container">
-        <header class="header">
-            <div class="logo">LinkGold</div>
+        <header class="header fade-in">
+            <div class="logo" onclick="showMainTab()">
+                <div class="logo-text">LinkGold</div>
+            </div>
             <div class="slogan">Монетизируйте вашу активность</div>
         </header>
 
-        <main id="app">
-            <div class="loading">
-                <div>Загрузка приложения...</div>
+        <main class="main-content">
+            <!-- Вкладка главной страницы -->
+            <div id="main-tab" class="tab-content active">
+                <!-- Герой баннер с видео -->
+                <div class="hero-banner fade-in">
+                    <video autoplay muted loop playsinline>
+                        <source src="unwatermark_Awards Nomination Promo Kit_free.mp4" type="video/mp4">
+                    </video>
+                </div>
+
+                <!-- Компактные параллельные блоки -->
+                <div class="stats-grid fade-in">
+                    <div class="stat-card balance-card" onclick="showBalanceModal()">
+                        <div class="stat-icon">
+                            <div class="video-container">
+                                <video class="video-icon" autoplay muted loop playsinline>
+                                    <source src="From KlickPin CF Деньги пнг _ money png _ Элементы графического дизайна Анимационный дизайн Стикер-арт-Picsart-BackgroundRemover.mp4" type="video/mp4">
+                                </video>
+                            </div>
+                        </div>
+                        <div class="stat-label">Баланс</div>
+                        <div class="stat-value" id="user-balance-main">0 ₽</div>
+                    </div>
+                    
+                    <div class="stat-card support-card" onclick="openAdminChat()">
+                        <div class="stat-icon">
+                            <div class="video-container">
+                                <video class="video-icon" autoplay muted loop playsinline>
+                                    <source src="support-video-Picsart-BackgroundRemover.mp4" type="video/mp4">
+                                </video>
+                            </div>
+                        </div>
+                        <div class="stat-label">Поддержка</div>
+                        <div class="stat-value">24/7</div>
+                    </div>
+                </div>
+
+                <!-- Как работает -->
+                <div class="exchange-card fade-in" onclick="showHowItWorksModal()">
+                    <div class="exchange-icon">
+                        <div class="video-container">
+                            <video class="video-icon" autoplay muted loop playsinline>
+                                <source src="From KlickPin CF Компютер пнг _ laptop png in 2025 — копия-Picsart-BackgroundRemover (2).mp4" type="video/mp4">
+                            </video>
+                        </div>
+                    </div>
+                    <div class="exchange-title">Как работает</div>
+                    <div class="exchange-text">О заработке и выводе средств</div>
+                </div>
+
+                <!-- Размещение поста -->
+                <div class="post-promo fade-in">
+                    <div class="post-icon">
+                        <div class="video-container video-large">
+                            <video class="video-icon" autoplay muted loop playsinline>
+                                <source src="post-video-Picsart-BackgroundRemover.mp4" type="video/mp4">
+                            </video>
+                        </div>
+                    </div>
+                    <div class="post-title">Разместите пост</div>
+                    <div class="post-description">Рекламируйте в нашем канале и получайте охват аудитории</div>
+                    <button class="btn btn-primary btn-full" onclick="showPrices()">Разместить</button>
+                </div>
+
+                <!-- Кнопка перехода к заданиям -->
+                <div class="tasks-button-container fade-in">
+                    <button class="tasks-btn" onclick="showTasksTab()">
+                        Смотреть все задания
+                    </button>
+                </div>
+
+                <!-- Панель администратора (только для главного админа) -->
+                <div id="admin-panel" class="admin-panel fade-in" style="display: none;">
+                    <div class="admin-title">Панель администратора</div>
+                    <div class="admin-buttons">
+                        <button class="admin-btn" onclick="showAddTaskForm()">Добавить задание</button>
+                        <button class="admin-btn" onclick="showCheckTasks()">Проверка заданий</button>
+                        <button class="admin-btn" id="admin-management-btn" onclick="showAdminManagement()">Управление админами</button>
+                    </div>
+                    
+                    <!-- Форма добавления задания -->
+                    <div id="add-task-form" class="admin-form" style="display: none;">
+                        <input type="text" class="admin-input" id="task-title" placeholder="Название задания">
+                        <select class="admin-input" id="task-category">
+                            <option value="social">Соцсети</option>
+                            <option value="subscribe">Подписки</option>
+                            <option value="view">Просмотры</option>
+                            <option value="comment">Комментарии</option>
+                            <option value="repost">Репосты</option>
+                        </select>
+                        <input type="text" class="admin-input" id="task-price" placeholder="Цена (в рублях)">
+                        <input type="text" class="admin-input" id="task-time" placeholder="Время выполнения">
+                        <input type="text" class="admin-input" id="task-link" placeholder="Ссылка для выполнения">
+                        <textarea class="admin-textarea" id="task-description" placeholder="Описание задания"></textarea>
+                        <button class="admin-submit" onclick="addTask()">Добавить задание</button>
+                    </div>
+                    
+                    <!-- Список заданий на проверку -->
+                    <div id="check-tasks" class="admin-task-list" style="display: none;">
+                        <!-- Задания будут добавлены через JavaScript -->
+                    </div>
+                    
+                    <!-- Управление админами -->
+                    <div id="admin-management" class="admin-form" style="display: none;">
+                        <input type="text" class="admin-input" id="admin-username" placeholder="Username пользователя в TG">
+                        <div style="display: flex; gap: 10px;">
+                            <button class="admin-submit" style="background: var(--success);" onclick="hireAdmin()">Нанять админа</button>
+                            <button class="admin-submit" style="background: var(--error);" onclick="fireAdmin()">Удалить админа</button>
+                        </div>
+                        <div id="admin-list" style="margin-top: 16px;">
+                            <!-- Список админов будет добавлен через JavaScript -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Вкладка заданий -->
+            <div id="tasks-tab" class="tab-content tasks-tab">
+                <div class="tasks-tabs">
+                    <div class="task-tab active" onclick="showTaskTab('new')">Новые задания</div>
+                    <div class="task-tab" id="confirmation-tab" onclick="showTaskTab('confirmation')">Подтверждение задания</div>
+                    <div class="task-tab" onclick="showTaskTab('completed')">Выполненные задания</div>
+                </div>
+                
+                <div class="search-container fade-in">
+                    <div class="search-icon">🔍</div>
+                    <input type="text" class="search-input" id="task-search" placeholder="Поиск заданий...">
+                </div>
+                
+                <div class="filters-container fade-in">
+                    <button class="filter-btn active" data-filter="all">Все</button>
+                    <button class="filter-btn" data-filter="social">Соцсети</button>
+                    <button class="filter-btn" data-filter="subscribe">Подписки</button>
+                    <button class="filter-btn" data-filter="view">Просмотры</button>
+                    <button class="filter-btn" data-filter="comment">Комментарии</button>
+                    <button class="filter-btn" data-filter="repost">Репосты</button>
+                </div>
+                
+                <!-- Новые задания -->
+                <div id="new-tasks" class="tasks-grid">
+                    <!-- Задания будут добавлены через JavaScript -->
+                </div>
+                
+                <!-- Задания на подтверждение -->
+                <div id="confirmation-tasks" class="tasks-grid" style="display: none;">
+                    <!-- Задания будут добавлены через JavaScript -->
+                </div>
+                
+                <!-- Выполненные задания -->
+                <div id="completed-tasks" class="tasks-grid" style="display: none;">
+                    <!-- Задания будут добавлены через JavaScript -->
+                </div>
+            </div>
+            
+            <!-- Вкладка профиля -->
+            <div id="profile-tab" class="tab-content">
+                <!-- Заголовок профиля -->
+                <div class="profile-header fade-in">
+                    <div class="profile-avatar">
+                        <video autoplay muted loop playsinline>
+                            <source src="https://assets.mixkit.co/videos/preview/mixkit-handsome-man-smiling-43385-large.mp4" type="video/mp4">
+                        </video>
+                    </div>
+                    <div class="profile-info">
+                        <div class="profile-name" id="username">@username</div>
+                        <div class="profile-id">TG: <span id="user-tg">@user_tg</span></div>
+                        <div class="profile-level" onclick="showLevelInfo()">Уровень 0</div>
+                    </div>
+                </div>
+                
+                <!-- Статистика профиля -->
+                <div class="profile-stats fade-in">
+                    <div class="profile-stat">
+                        <div class="stat-value">0 ₽</div>
+                        <div class="stat-label">Баланс</div>
+                    </div>
+                    <div class="profile-stat">
+                        <div class="stat-value">0</div>
+                        <div class="stat-label">Выполнено</div>
+                    </div>
+                    <div class="profile-stat">
+                        <div class="stat-value">0</div>
+                        <div class="stat-label">Активных</div>
+                    </div>
+                    <div class="profile-stat">
+                        <div class="stat-value">0%</div>
+                        <div class="stat-label">Качество</div>
+                    </div>
+                </div>
+                
+                <!-- Прогресс уровня -->
+                <div class="level-progress fade-in">
+                    <div class="level-title">
+                        <span class="level-name">Прогресс уровня</span>
+                        <span class="level-count">0/10 заданий</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="level-progress-bar"></div>
+                    </div>
+                    <div class="level-info">
+                        Выполните 10 заданий для достижения 1 уровня
+                    </div>
+                </div>
+                
+                <!-- Реферальная система -->
+                <div class="referral-system fade-in">
+                    <div class="referral-title">Реферальная система</div>
+                    
+                    <div class="referral-code">
+                        <div class="referral-label">Ваш реферальный код</div>
+                        <div class="code-value" id="referral-code">GOLD123456</div>
+                        <button class="copy-btn" onclick="copyReferralCode()">Скопировать код</button>
+                    </div>
+                    
+                    <div class="referral-stats">
+                        <div class="referral-stat">
+                            <div class="referral-value" id="ref-invited">0</div>
+                            <div class="referral-label">Приглашено</div>
+                        </div>
+                        <div class="referral-stat">
+                            <div class="referral-value" id="ref-earned">0 ₽</div>
+                            <div class="referral-label">Заработано</div>
+                        </div>
+                    </div>
+                    
+                    <div class="referral-info">
+                        Приглашайте друзей и получайте 10% от их заработка!
+                    </div>
+                </div>
+                
+                <!-- Действия профиля -->
+                <div class="profile-section fade-in">
+                    <div class="section-title">Действия</div>
+                    <div class="profile-actions">
+                        <div class="profile-action" onclick="showWithdrawModal()">
+                            <div class="action-icon">💳</div>
+                            <div class="action-text">Вывод средств</div>
+                            <div class="action-arrow">›</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Настройки -->
+                <div class="profile-section fade-in">
+                    <div class="section-title">Настройки</div>
+                    <div class="profile-actions">
+                        <div class="profile-action" onclick="openAdminChat()">
+                            <div class="action-icon">🛟</div>
+                            <div class="action-text">Поддержка</div>
+                            <div class="action-arrow">›</div>
+                        </div>
+                        <div class="profile-action" onclick="showAboutPage()">
+                            <div class="action-icon">ℹ️</div>
+                            <div class="action-text">О приложении</div>
+                            <div class="action-arrow">›</div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </main>
 
-        <nav class="nav" style="display: none;">
-            <div class="nav-item active" onclick="showTab('main')">
+        <!-- Навигация -->
+        <nav class="bottom-nav">
+            <div class="nav-item active" onclick="showMainTab()">
                 <div class="nav-icon">🏠</div>
                 <div class="nav-label">Главная</div>
             </div>
-            <div class="nav-item" onclick="showTab('tasks')">
+            <div class="nav-item" onclick="showTasksTab()">
                 <div class="nav-icon">📋</div>
                 <div class="nav-label">Задания</div>
             </div>
-            <div class="nav-item" onclick="showTab('profile')">
+            <div class="nav-item" onclick="showProfileTab()">
                 <div class="nav-icon">👤</div>
                 <div class="nav-label">Профиль</div>
             </div>
         </nav>
     </div>
 
+    <!-- Модальные окна -->
+    <div class="modal" id="balance-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">💰 Ваш баланс</div>
+                <button class="modal-close" onclick="closeModal('balance-modal')">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="balance-amount">0 ₽</div>
+                <button class="profile-btn" onclick="goToProfile()">Перейти в профиль</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="how-it-works-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">⚡ Как работает LinkGold</div>
+                <button class="modal-close" onclick="closeModal('how-it-works-modal')">×</button>
+            </div>
+            <div class="modal-body">
+                <p class="info-text">LinkGold — это платформа для заработка на выполнении простых заданий и активности в социальных сетях.</p>
+                
+                <p class="info-text">Основные принципы работы:</p>
+                <ul class="info-list">
+                    <li><span class="highlight">Выбирайте задания</span> из доступных в вашем профиле</li>
+                    <li><span class="highlight">Выполняйте</span> их согласно инструкции</li>
+                    <li><span class="highlight">Получайте оплату</span> сразу после проверки</li>
+                    <li><span class="highlight">Выводите средства</span> удобным способом</li>
+                </ul>
+                
+                <p class="info-text">Виды заданий:</p>
+                <ul class="info-list">
+                    <li>Подписки на каналы и аккаунты</li>
+                    <li>Просмотры и лайки</li>
+                    <li>Репосты и комментарии</li>
+                    <li>Участие в опросах</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="level-info-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">📊 Система уровней</div>
+                <button class="modal-close" onclick="closeModal('level-info-modal')">×</button>
+            </div>
+            <div class="modal-body">
+                <p class="info-text">Уровень повышается за каждые 10 выполненных заданий:</p>
+                
+                <div class="level-list">
+                    <div class="level-item">
+                        <span class="level-number">1 уровень</span>
+                        <span class="level-requirement">0-10 заданий</span>
+                    </div>
+                    <div class="level-item">
+                        <span class="level-number">2 уровень</span>
+                        <span class="level-requirement">11-20 заданий</span>
+                    </div>
+                    <div class="level-item">
+                        <span class="level-number">3 уровень</span>
+                        <span class="level-requirement">21-30 заданий</span>
+                    </div>
+                    <div class="level-item">
+                        <span class="level-number">4 уровень</span>
+                        <span class="level-requirement">31-40 заданий</span>
+                    </div>
+                    <div class="level-item">
+                        <span class="level-number">5 уровень</span>
+                        <span class="level-requirement">41-50 заданий</span>
+                    </div>
+                </div>
+                
+                <p class="info-text">Чем выше ваш уровень, тем больше заданий и выше оплата!</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="referral-info-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">👥 Реферальная программа</div>
+                <button class="modal-close" onclick="closeModal('referral-info-modal')">×</button>
+            </div>
+            <div class="modal-body">
+                <p class="info-text">Приглашайте друзей и получайте бонусы!</p>
+                
+                <div class="info-text">
+                    <strong>Как это работает:</strong>
+                    <ul>
+                        <li>Делитесь своим реферальным кодом с друзьями</li>
+                        <li>Они регистрируются по вашему коду</li>
+                        <li>Вы получаете 10% от их заработка</li>
+                        <li>Бонусы начисляются мгновенно</li>
+                    </ul>
+                </div>
+                
+                <div class="info-text">
+                    <strong>Ваши преимущества:</strong>
+                    <ul>
+                        <li>Пассивный заработок без усилий</li>
+                        <li>Нет ограничений на количество приглашенных</li>
+                        <li>Вывод реферальных бонусов доступен сразу</li>
+                    </ul>
+                </div>
+                
+                <div class="referral-code">
+                    <div class="referral-label">Ваш реферальный код</div>
+                    <div class="code-value" id="modal-referral-code">GOLD123456</div>
+                    <button class="copy-btn" onclick="copyReferralCode()">Скопировать код</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="about-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">ℹ️ О LinkGold</div>
+                <button class="modal-close" onclick="closeModal('about-modal')">×</button>
+            </div>
+            <div class="modal-body">
+                <p class="info-text">LinkGold — это инновационная платформа для заработка, которая позволяет каждому пользователю монетизировать свою активность в интернете. Мы создали удобный и прозрачный сервис, где вы можете выполнять интересные задания и получать за это достойное вознаграждение.</p>
+                
+                <p class="info-text">Наша миссия — предоставить возможность дополнительного заработка для всех, кто готов проявить активность и выполнять простые задачи. Мы верим, что каждый должен иметь возможность монетизировать свое время и усилия, проведенные в интернете.</p>
+                
+                <div class="about-features">
+                    <div class="about-feature">
+                        <div class="feature-icon">🚀</div>
+                        <div class="feature-text">Быстрый старт</div>
+                    </div>
+                    <div class="about-feature">
+                        <div class="feature-icon">💎</div>
+                        <div class="feature-text">Честные условия</div>
+                    </div>
+                    <div class="about-feature">
+                        <div class="feature-icon">🛡️</div>
+                        <div class="feature-text">Надежная защита</div>
+                    </div>
+                    <div class="about-feature">
+                        <div class="feature-icon">📈</div>
+                        <div class="feature-text">Постоянный рост</div>
+                    </div>
+                </div>
+                
+                <p class="info-text">Мы постоянно работаем над улучшением сервиса, добавляем новые задания и возможности для заработка. Наша команда заботится о каждом пользователе и стремится создать лучшие условия для взаимовыгодного сотрудничества.</p>
+                
+                <div class="about-footer">
+                    LinkGold © 2023. Все права защищены.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="task-modal">
+        <div class="modal-content task-modal-content">
+            <div class="modal-header">
+                <div class="task-modal-title" id="task-modal-title">Название задания</div>
+                <button class="modal-close" onclick="closeModal('task-modal')">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="task-modal-category" id="task-modal-category">Категория</div>
+                <div class="task-modal-price" id="task-modal-price">0 ₽</div>
+                <div class="task-modal-description" id="task-modal-description">Описание задания</div>
+                
+                <div class="task-modal-details">
+                    <div class="task-detail">
+                        <span class="task-detail-label">Время выполнения:</span>
+                        <span class="task-detail-value" id="task-modal-time">5 мин</span>
+                    </div>
+                    <div class="task-detail">
+                        <span class="task-detail-label">Статус:</span>
+                        <span class="task-detail-value" id="task-modal-status">Доступно</span>
+                    </div>
+                    <div class="task-detail">
+                        <span class="task-detail-label">Осталось:</span>
+                        <span class="task-detail-value" id="task-modal-available">15 заданий</span>
+                    </div>
+                </div>
+                
+                <div class="task-modal-buttons">
+                    <button class="task-modal-cancel" onclick="closeModal('task-modal')">Отмена</button>
+                    <button class="task-modal-start" onclick="startTask()">Начать задание</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="confirmation-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">📸 Подтверждение задания</div>
+                <button class="modal-close" onclick="closeModal('confirmation-modal')">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="confirmation-task">
+                    <div class="confirmation-header">
+                        <div class="confirmation-title" id="confirmation-task-title">Название задания</div>
+                        <div class="confirmation-price" id="confirmation-task-price">0 ₽</div>
+                    </div>
+                    <div class="confirmation-question">Вы выполнили это задание?</div>
+                    <div class="confirmation-buttons">
+                        <button class="confirmation-no" onclick="cancelConfirmation()">Нет</button>
+                        <button class="confirmation-yes" onclick="confirmTask()">Да</button>
+                    </div>
+                </div>
+                
+                <div id="confirmation-form" style="display: none;">
+                    <div style="margin-bottom: 16px;">
+                        <label style="display: block; margin-bottom: 8px; font-size: 14px;">Загрузите фото выполненного задания:</label>
+                        <input type="file" id="task-photo" accept="image/*" style="width: 100%; margin-bottom: 12px;">
+                    </div>
+                    <div style="margin-bottom: 16px;">
+                        <label style="display: block; margin-bottom: 8px; font-size: 14px;">Комментарий (необязательно):</label>
+                        <textarea id="task-comment" placeholder="Опишите выполнение задания..." style="width: 100%; height: 80px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 10px; padding: 12px; color: var(--text-primary);"></textarea>
+                    </div>
+                    <button class="btn btn-primary btn-full" onclick="submitTaskForReview()">Отправить на проверку</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="chat-modal" id="admin-chat">
+        <div class="chat-header">
+            <div class="chat-avatar">
+                <video class="video-icon" autoplay muted loop playsinline>
+                    <source src="https://drive.google.com/uc?export=download&id=1fuj0U82oVCHM-QvemWOnaEAcVZmrD3jg" type="video/mp4">
+                </video>
+            </div>
+            <div class="chat-info">
+                <div class="chat-name">Администратор LinkGold</div>
+                <div class="chat-status">TG: @linkgold_admin</div>
+            </div>
+            <button class="chat-close" onclick="closeChat()">×</button>
+        </div>
+        <div class="chat-messages">
+            <div class="message message-admin">
+                Здравствуйте! Чем могу помочь?
+            </div>
+        </div>
+        <div class="chat-input">
+            <input type="text" placeholder="Введите сообщение...">
+            <button class="chat-send">➤</button>
+        </div>
+    </div>
+
+    <div class="prices-modal" id="prices-modal">
+        <div class="prices-content">
+            <div class="prices-title">💰 Стоимость размещения</div>
+            <div class="price-grid">
+                <div class="price-item">
+                    <span class="price-time">1 час</span>
+                    <span class="price-amount">200 ₽</span>
+                </div>
+                <div class="price-item">
+                    <span class="price-time">3 часа</span>
+                    <span class="price-amount">600 ₽</span>
+                </div>
+                <div class="price-item">
+                    <span class="price-time">1 день</span>
+                    <span class="price-amount">4 500 ₽</span>
+                </div>
+                <div class="price-item">
+                    <span class="price-time">7 дней</span>
+                    <span class="price-amount">20 000 ₽</span>
+                </div>
+            </div>
+            <button class="prices-btn" onclick="openAdminChatFromPrices()">
+                💬 Написать о рекламе
+            </button>
+        </div>
+    </div>
     <script>
         // Глобальные переменные
         let userData = null;
