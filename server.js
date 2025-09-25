@@ -567,6 +567,90 @@ process.on('SIGINT', () => {
     process.exit(0);
   });
 });
+// Добавьте эти дополнительные endpoints к вашему server.js
 
+// Получение профиля пользователя
+app.get('/api/user/profile', authenticateToken, (req, res) => {
+    db.get('SELECT * FROM users WHERE telegram_id = ?', [req.user.telegramId], (err, user) => {
+        if (err) {
+            console.error('❌ Ошибка получения профиля:', err.message);
+            return res.status(500).json({ success: false, error: 'Ошибка базы данных' });
+        }
+
+        if (!user) {
+            return res.status(404).json({ success: false, error: 'Пользователь не найден' });
+        }
+
+        res.json({
+            success: true,
+            user: {
+                telegramId: user.telegram_id,
+                username: user.username,
+                firstName: user.first_name,
+                balance: user.balance,
+                completedTasks: user.completed_tasks,
+                activeTasks: user.active_tasks,
+                level: user.level,
+                levelProgress: user.level_progress,
+                isAdmin: user.is_admin === 1,
+                isMainAdmin: user.is_main_admin === 1
+            }
+        });
+    });
+});
+
+// Получение статистики пользователя
+app.get('/api/user/stats', authenticateToken, (req, res) => {
+    db.get(`SELECT 
+        balance, completed_tasks, active_tasks, level, level_progress 
+        FROM users WHERE telegram_id = ?`, 
+        [req.user.telegramId], (err, user) => {
+            if (err) {
+                return res.status(500).json({ success: false, error: 'Ошибка базы данных' });
+            }
+            res.json({ success: true, stats: user });
+        });
+});
+
+// Обновление данных пользователя
+app.put('/api/user/update', authenticateToken, (req, res) => {
+    const { username, firstName } = req.body;
+    
+    db.run('UPDATE users SET username = ?, first_name = ? WHERE telegram_id = ?',
+        [username, firstName, req.user.telegramId], function(err) {
+            if (err) {
+                return res.status(500).json({ success: false, error: 'Ошибка обновления' });
+            }
+            res.json({ success: true, message: 'Данные обновлены' });
+        });
+});
+// Эндпоинты для админ-панели
+app.get('/api/admin/users', authenticateToken, (req, res) => {
+    if (!req.user.isAdmin) {
+        return res.status(403).json({ success: false, error: 'Требуются права администратора' });
+    }
+
+    db.all('SELECT telegram_id, username, first_name, balance, completed_tasks, active_tasks, level FROM users', 
+        (err, users) => {
+            if (err) return res.status(500).json({ success: false, error: 'Ошибка базы данных' });
+            res.json({ success: true, users });
+        });
+});
+
+// Статистика платформы для админа
+app.get('/api/admin/stats', authenticateToken, (req, res) => {
+    if (!req.user.isAdmin) {
+        return res.status(403).json({ success: false, error: 'Требуются права администратора' });
+    }
+
+    db.get(`SELECT 
+        COUNT(*) as totalUsers,
+        SUM(balance) as totalBalance,
+        SUM(completed_tasks) as totalCompletedTasks
+        FROM users`, (err, stats) => {
+            if (err) return res.status(500).json({ success: false, error: 'Ошибка базы данных' });
+            res.json({ success: true, stats });
+        });
+});
 // Запуск
 startServer();
