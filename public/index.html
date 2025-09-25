@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LinkGold - Заработок в Telegram</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+        }
+
+        :root {
+            --bg-primary: #0f0f23;
+            --bg-secondary: #1a1a3a;
+            --text-primary: #ffffff;
+            --text-secondary: #8b9bda;
+            --accent: #6366f1;
+            --accent-hover: #4f46e5;
+            --card-bg: #0f0f23;
+            --border: #2a2a4a;
+            --success: #10b981;
+            --error: #ef4444;
+            --warning: #f59e0b;
+        }
+
+        body {
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            padding: 16px;
+            padding-bottom: 100px;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 100%;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+            padding: 20px 0;
+        }
+
+        .logo {
+            font-size: 32px;
+            font-weight: 800;
+            background: linear-gradient(135deg, #ffd700, #ffb700);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            margin-bottom: 8px;
+        }
+
+        .slogan {
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 16px;
+            border: 1px solid var(--border);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn {
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn:hover {
+            background: var(--accent-hover);
+            transform: translateY(-1px);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #ffd700, #ffb700);
+            color: #000;
+            font-weight: 700;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #6366f1, #4f46e5);
+            border-radius: 12px;
+            padding: 16px;
+            text-align: center;
+            color: white;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            opacity: 0.9;
+        }
+
+        .task-card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 12px;
+            border: 1px solid var(--border);
+        }
+
+        .task-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 12px;
+        }
+
+        .task-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .task-category {
+            background: var(--bg-secondary);
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 11px;
+            color: var(--text-secondary);
+        }
+
+        .task-price {
+            font-size: 18px;
+            font-weight: 700;
+            color: #ffd700;
+        }
+
+        .task-description {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-bottom: 16px;
+            line-height: 1.4;
+        }
+
+        .task-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .task-time {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .nav {
+            position: fixed;
+            bottom: 16px;
+            left: 16px;
+            right: 16px;
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 12px;
+            display: flex;
+            justify-content: space-around;
+            border: 1px solid var(--border);
+        }
+
+        .nav-item {
+            text-align: center;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 8px;
+            flex: 1;
+            opacity: 0.7;
+            transition: all 0.3s ease;
+        }
+
+        .nav-item.active {
+            background: var(--accent);
+            opacity: 1;
+        }
+
+        .nav-icon {
+            font-size: 20px;
+            margin-bottom: 4px;
+        }
+
+        .nav-label {
+            font-size: 11px;
+        }
+
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(15, 15, 35, 0.95);
+            z-index: 1000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .modal-content {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 24px;
+            max-width: 400px;
+            width: 100%;
+            border: 1px solid var(--border);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .modal-title {
+            font-size: 20px;
+            font-weight: 700;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            color: var(--text-secondary);
+            cursor: pointer;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-secondary);
+        }
+
+        .error {
+            background: var(--error);
+            color: white;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+            text-align: center;
+        }
+
+        .success {
+            background: var(--success);
+            color: white;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <div class="logo">LinkGold</div>
+            <div class="slogan">Монетизируйте вашу активность</div>
+        </header>
+
+        <main id="app">
+            <div class="loading">
+                <div>Загрузка приложения...</div>
+            </div>
+        </main>
+
+        <nav class="nav" style="display: none;">
+            <div class="nav-item active" onclick="showTab('main')">
+                <div class="nav-icon">🏠</div>
+                <div class="nav-label">Главная</div>
+            </div>
+            <div class="nav-item" onclick="showTab('tasks')">
+                <div class="nav-icon">📋</div>
+                <div class="nav-label">Задания</div>
+            </div>
+            <div class="nav-item" onclick="showTab('profile')">
+                <div class="nav-icon">👤</div>
+                <div class="nav-label">Профиль</div>
+            </div>
+        </nav>
+    </div>
+
+    <script>
+        // Глобальные переменные
+        let userData = null;
+        let authToken = null;
+        let currentTab = 'main';
+
+        // Инициализация приложения
+        document.addEventListener('DOMContentLoaded', async function() {
+            await initializeApp();
+        });
+
+        // Инициализация приложения
+        async function initializeApp() {
+            try {
+                // Проверяем health сервера
+                const healthResponse = await fetch('/api/health');
+                if (!healthResponse.ok) {
+                    throw new Error('Сервер не доступен');
+                }
+
+                // Проверяем авторизацию
+                await checkAuth();
+                
+            } catch (error) {
+                showError('Ошибка подключения к серверу: ' + error.message);
+            }
+        }
+
+        // Проверка авторизации
+        async function checkAuth() {
+            const savedToken = localStorage.getItem('linkgold_token');
+            
+            if (savedToken) {
+                authToken = savedToken;
+                await loadUserData();
+            } else {
+                showLoginScreen();
+            }
+        }
+
+        // Загрузка данных пользователя
+        async function loadUserData() {
+            try {
+                const response = await fetch('/api/user/profile', {
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    userData = data.user;
+                    showMainApp();
+                } else {
+                    localStorage.removeItem('linkgold_token');
+                    showLoginScreen();
+                }
+            } catch (error) {
+                showError('Ошибка загрузки данных: ' + error.message);
+            }
+        }
+
+        // Показ экрана логина
+        function showLoginScreen() {
+            document.getElementById('app').innerHTML = `
+                <div class="card">
+                    <h2 style="text-align: center; margin-bottom: 20px;">Добро пожаловать в LinkGold!</h2>
+                    <p style="text-align: center; margin-bottom: 20px; color: var(--text-secondary);">
+                        Платформа для заработка в Telegram
+                    </p>
+                    <button class="btn btn-primary" style="width: 100%;" onclick="simulateTelegramAuth()">
+                        Войти через Telegram
+                    </button>
+                </div>
+            `;
+        }
+
+        // Симуляция входа через Telegram (для тестирования)
+        async function simulateTelegramAuth() {
+            try {
+                // Тестовые данные пользователя
+                const testUser = {
+                    telegramId: Math.floor(100000 + Math.random() * 900000).toString(),
+                    username: 'test_user',
+                    firstName: 'Test User'
+                };
+
+                const response = await fetch('/api/auth/telegram', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(testUser)
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    authToken = data.token;
+                    localStorage.setItem('linkgold_token', authToken);
+                    userData = data.user;
+                    showMainApp();
+                } else {
+                    showError('Ошибка авторизации: ' + data.error);
+                }
+            } catch (error) {
+                showError('Ошибка авторизации: ' + error.message);
+            }
+        }
+
+        // Показ основного приложения
+        function showMainApp() {
+            document.querySelector('.nav').style.display = 'flex';
+            showTab('main');
+        }
+
+        // Переключение вкладок
+        function showTab(tabName) {
+            currentTab = tabName;
+            
+            // Обновляем навигацию
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            document.querySelector(`.nav-item:nth-child(${tabName === 'main' ? 1 : tabName === 'tasks' ? 2 : 3})`).classList.add('active');
+            
+            // Показываем контент вкладки
+            switch (tabName) {
+                case 'main':
+                    showMainTab();
+                    break;
+                case 'tasks':
+                    showTasksTab();
+                    break;
+                case 'profile':
+                    showProfileTab();
+                    break;
+            }
+        }
+
+        // Вкладка главная
+        async function showMainTab() {
+            document.getElementById('app').innerHTML = `
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-value">${userData.balance} ₽</div>
+                        <div class="stat-label">Баланс</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">${userData.completedTasks}</div>
+                        <div class="stat-label">Выполнено</div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 style="margin-bottom: 16px;">Доступные задания</h3>
+                    <div id="tasks-list">
+                        <div class="loading">Загрузка заданий...</div>
+                    </div>
+                    <button class="btn" style="width: 100%; margin-top: 16px;" onclick="showTab('tasks')">
+                        Смотреть все задания
+                    </button>
+                </div>
+
+                <div class="card">
+                    <h3 style="margin-bottom: 12px;">Поддержка</h3>
+                    <p style="color: var(--text-secondary); margin-bottom: 16px;">
+                        Есть вопросы? Напишите в поддержку!
+                    </p>
+                    <button class="btn" style="width: 100%;" onclick="openSupportChat()">
+                        💬 Открыть чат поддержки
+                    </button>
+                </div>
+            `;
+
+            await loadTasks();
+        }
+
+        // Вкладка заданий
+        async function showTasksTab() {
+            document.getElementById('app').innerHTML = `
+                <div class="card">
+                    <h2 style="margin-bottom: 16px;">Все задания</h2>
+                    
+                    <div style="margin-bottom: 16px;">
+                        <input type="text" id="search-input" placeholder="Поиск заданий..." 
+                               style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-secondary); color: var(--text-primary);">
+                    </div>
+
+                    <div id="tasks-list">
+                        <div class="loading">Загрузка заданий...</div>
+                    </div>
+                </div>
+            `;
+
+            // Настройка поиска
+            document.getElementById('search-input').addEventListener('input', function(e) {
+                setTimeout(() => loadTasks(e.target.value), 300);
+            });
+
+            await loadTasks();
+        }
+
+        // Вкладка профиль
+        function showProfileTab() {
+            document.getElementById('app').innerHTML = `
+                <div class="card">
+                    <h2 style="margin-bottom: 16px;">Профиль</h2>
+                    
+                    <div style="display: flex; align-items: center; margin-bottom: 20px;">
+                        <div style="width: 60px; height: 60px; background: linear-gradient(135deg, #6366f1, #4f46e5); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 16px; font-size: 24px;">
+                            👤
+                        </div>
+                        <div>
+                            <div style="font-size: 18px; font-weight: 600;">${userData.firstName}</div>
+                            <div style="color: var(--text-secondary);">${userData.username}</div>
+                            <div style="color: var(--text-secondary); font-size: 12px;">ID: ${userData.telegramId}</div>
+                        </div>
+                    </div>
+
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-value">${userData.balance} ₽</div>
+                            <div class="stat-label">Баланс</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value">${userData.level}</div>
+                            <div class="stat-label">Уровень</div>
+                        </div>
+                    </div>
+
+                    <div style="margin-top: 20px;">
+                        <button class="btn" style="width: 100%; margin-bottom: 12px;" onclick="openSupportChat()">
+                            💬 Поддержка
+                        </button>
+                        <button class="btn" style="width: 100%; background: var(--error);" onclick="logout()">
+                            🚪 Выйти
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Загрузка заданий
+        async function loadTasks(search = '') {
+            try {
+                const response = await fetch(`/api/tasks?search=${encodeURIComponent(search)}`, {
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`
+                    }
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    const tasksList = document.getElementById('tasks-list');
+                    if (tasksList) {
+                        if (data.tasks.length === 0) {
+                            tasksList.innerHTML = '<div style="text-align: center; padding: 40px; color: var(--text-secondary);">Задания не найдены</div>';
+                        } else {
+                            tasksList.innerHTML = data.tasks.map(task => `
+                                <div class="task-card">
+                                    <div class="task-header">
+                                        <div>
+                                            <div class="task-title">${task.title}</div>
+                                            <span class="task-category">${getCategoryName(task.category)}</span>
+                                        </div>
+                                        <div class="task-price">${task.price} ₽</div>
+                                    </div>
+                                    <div class="task-description">${task.description}</div>
+                                    <div class="task-footer">
+                                        <div class="task-time">${task.time}</div>
+                                        <button class="btn" onclick="startTask(${task.id})">Выполнить</button>
+                                    </div>
+                                </div>
+                            `).join('');
+                        }
+                    }
+                } else {
+                    showError('Ошибка загрузки заданий: ' + data.error);
+                }
+            } catch (error) {
+                showError('Ошибка загрузки заданий: ' + error.message);
+            }
+        }
+
+        // Запуск задания
+        async function startTask(taskId) {
+            try {
+                const response = await fetch('/api/tasks/start', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify({ taskId })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showSuccess('Задание начато! Выполните его и вернитесь для подтверждения.');
+                    await loadTasks();
+                    await loadUserData();
+                } else {
+                    showError('Ошибка: ' + data.error);
+                }
+            } catch (error) {
+                showError('Ошибка: ' + error.message);
+            }
+        }
+
+        // Открытие чата поддержки
+        function openSupportChat() {
+            document.getElementById('app').innerHTML = `
+                <div class="card">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                        <h2>Поддержка</h2>
+                        <button class="btn" onclick="showTab('main')">← Назад</button>
+                    </div>
+
+                    <div id="chat-messages" style="height: 300px; overflow-y: auto; margin-bottom: 16px; padding: 16px; background: var(--bg-secondary); border-radius: 8px;">
+                        <div style="text-align: center; color: var(--text-secondary); padding: 20px;">
+                            Загрузка сообщений...
+                        </div>
+                    </div>
+
+                    <div style="display: flex; gap: 8px;">
+                        <input type="text" id="message-input" placeholder="Введите сообщение..." 
+                               style="flex: 1; padding: 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-secondary); color: var(--text-primary);">
+                        <button class="btn" onclick="sendMessage()">Отправить</button>
+                    </div>
+                </div>
+            `;
+
+            loadChatMessages();
+        }
+
+        // Загрузка сообщений чата
+        async function loadChatMessages() {
+            try {
+                const response = await fetch('/api/chat/messages', {
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`
+                    }
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    const messagesContainer = document.getElementById('chat-messages');
+                    if (messagesContainer) {
+                        if (data.messages.length === 0) {
+                            messagesContainer.innerHTML = '<div style="text-align: center; color: var(--text-secondary); padding: 20px;">Нет сообщений</div>';
+                        } else {
+                            messagesContainer.innerHTML = data.messages.map(msg => `
+                                <div style="margin-bottom: 12px; padding: 8px 12px; border-radius: 8px; background: ${msg.is_admin ? 'var(--accent)' : 'var(--bg-primary)'}; max-width: 80%; ${msg.is_admin ? 'margin-left: auto;' : ''}">
+                                    <div style="font-size: 13px; opacity: 0.8; margin-bottom: 4px;">${msg.is_admin ? 'Администратор' : 'Вы'}</div>
+                                    <div>${msg.message}</div>
+                                </div>
+                            `).join('');
+                            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error('Ошибка загрузки чата:', error);
+            }
+        }
+
+        // Отправка сообщения
+        async function sendMessage() {
+            const input = document.getElementById('message-input');
+            const message = input.value.trim();
+
+            if (!message) return;
+
+            try {
+                const response = await fetch('/api/chat/messages', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify({ message })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    input.value = '';
+                    await loadChatMessages();
+                } else {
+                    showError('Ошибка отправки: ' + data.error);
+                }
+            } catch (error) {
+                showError('Ошибка отправки: ' + error.message);
+            }
+        }
+
+        // Выход из аккаунта
+        function logout() {
+            localStorage.removeItem('linkgold_token');
+            userData = null;
+            authToken = null;
+            showLoginScreen();
+            document.querySelector('.nav').style.display = 'none';
+        }
+
+        // Вспомогательные функции
+        function getCategoryName(category) {
+            const categories = {
+                'subscribe': 'Подписка',
+                'view': 'Просмотр',
+                'comment': 'Комментарий',
+                'repost': 'Репост',
+                'social': 'Соцсети'
+            };
+            return categories[category] || category;
+        }
+
+        function showError(message) {
+            const app = document.getElementById('app');
+            app.innerHTML = `<div class="error">${message}</div>` + app.innerHTML;
+        }
+
+        function showSuccess(message) {
+            const app = document.getElementById('app');
+            const successDiv = document.createElement('div');
+            successDiv.className = 'success';
+            successDiv.textContent = message;
+            app.insertBefore(successDiv, app.firstChild);
+            
+            setTimeout(() => successDiv.remove(), 3000);
+        }
+
+        // Обработка Enter в чате
+        document.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter' && document.getElementById('message-input')) {
+                sendMessage();
+            }
+        });
+    </script>
+</body>
+</html>
