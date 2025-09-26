@@ -2152,72 +2152,77 @@
     // Глобальные переменные
     let userData = null;
     let authToken = null;
-    let currentTab = 'main';
     let tasksData = [];
     let confirmationTasks = [];
-    let completedTasks = [];
     let chatMessages = [];
 
-    // Инициализация при загрузке
-    document.addEventListener('DOMContentLoaded', async function() {
-        await initializeApp();
+    // Инициализация
+    document.addEventListener('DOMContentLoaded', function() {
+        initializeApp();
     });
 
-    // Инициализация приложения
+    // Основная инициализация
     async function initializeApp() {
+        showLoading(true);
+        
         try {
-            // Проверяем health сервера
+            // Проверяем сервер
             const healthResponse = await fetch('/api/health');
-            if (!healthResponse.ok) {
-                throw new Error('Сервер не доступен');
-            }
-
+            if (!healthResponse.ok) throw new Error('Сервер не доступен');
+            
             // Проверяем авторизацию
             await checkAuth();
             
         } catch (error) {
-            showError('Ошибка подключения: ' + error.message);
+            console.error('Ошибка инициализации:', error);
             // Показываем тестовый режим
-            initializeTestMode();
+            setupTestMode();
         }
+        
+        showLoading(false);
     }
 
     // Проверка авторизации
     async function checkAuth() {
-        const savedToken = localStorage.getItem('linkgold_token');
+        authToken = localStorage.getItem('linkgold_token');
         
-        if (savedToken) {
-            authToken = savedToken;
-            await loadUserData();
-        } else {
-            showLoginScreen();
-        }
-    }
-
-    // Загрузка данных пользователя
-    async function loadUserData() {
-        try {
-            const response = await fetch('/api/user/profile', {
-                headers: {
-                    'Authorization': `Bearer ${authToken}`
+        if (authToken) {
+            try {
+                const response = await fetch('/api/user/profile', {
+                    headers: { 'Authorization': `Bearer ${authToken}` }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    userData = data.user;
+                    initializeAuthenticatedApp();
+                    return;
                 }
-            });
-
-            if (response.ok) {
-                const data = await response.json();
-                userData = data.user;
-                initializeAppInterface();
-            } else {
-                localStorage.removeItem('linkgold_token');
-                showLoginScreen();
+            } catch (error) {
+                console.error('Ошибка проверки токена:', error);
             }
-        } catch (error) {
-            showError('Ошибка загрузки данных: ' + error.message);
         }
+        
+        // Если не авторизован
+        showLoginScreen();
     }
 
-    // Симуляция входа через Telegram
-    async function simulateTelegramAuth() {
+    // Инициализация для авторизованного пользователя
+    function initializeAuthenticatedApp() {
+        updateUserInterface();
+        loadTasks();
+        loadChatMessages();
+        
+        // Показываем админ-панель если нужно
+        if (userData.isAdmin) {
+            document.getElementById('admin-panel').style.display = 'block';
+        }
+        
+        showMainTab();
+    }
+
+    // Вход через Telegram
+    async function loginWithTelegram() {
         try {
             const testUser = {
                 telegramId: Math.floor(100000 + Math.random() * 900000).toString(),
@@ -2227,9 +2232,7 @@
 
             const response = await fetch('/api/auth/telegram', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(testUser)
             });
 
@@ -2239,80 +2242,39 @@
                 authToken = data.token;
                 localStorage.setItem('linkgold_token', authToken);
                 userData = data.user;
-                initializeAppInterface();
+                initializeAuthenticatedApp();
+                showNotification('✅ Успешный вход!', 'success');
             } else {
-                showError('Ошибка авторизации: ' + data.error);
+                showNotification('❌ Ошибка входа', 'error');
             }
         } catch (error) {
-            showError('Ошибка авторизации: ' + error.message);
+            showNotification('❌ Ошибка сети', 'error');
         }
     }
 
-    // Инициализация интерфейса
-    function initializeAppInterface() {
-        document.querySelector('.nav').style.display = 'flex';
-        updateUserInterface();
-        showTab('main');
-        loadTasks();
-        loadChatMessages();
-        
-        // Показываем админ-панель если пользователь админ
-        if (userData.isAdmin) {
-            document.getElementById('admin-panel').style.display = 'block';
-        }
-    }
-
-    // Тестовый режим (если сервер недоступен)
-    function initializeTestMode() {
+    // Тестовый режим
+    function setupTestMode() {
         userData = {
+            telegramId: "123456789",
             username: "@test_user",
-            userTg: "@test_user", 
             firstName: "Тестовый",
             balance: 150,
-            completedTasks: 12,
-            activeTasks: 3,
+            completedTasks: 8,
+            activeTasks: 2,
             level: 2,
             levelProgress: 4,
             isAdmin: false
         };
-        initializeAppInterface();
+        initializeAuthenticatedApp();
+        showNotification('🧪 Тестовый режим', 'info');
     }
 
-    // Обновление интерфейса пользователя
-    function updateUserInterface() {
-        if (!userData) return;
-
-        document.getElementById('username').textContent = userData.username;
-        document.getElementById('user-tg').textContent = userData.userTg;
-        document.getElementById('user-balance-main').textContent = userData.balance + ' ₽';
-        
-        // Обновление статистики профиля
-        const statElements = document.querySelectorAll('.profile-stat');
-        if (statElements.length >= 4) {
-            statElements[0].querySelector('.stat-value').textContent = userData.balance + ' ₽';
-            statElements[1].querySelector('.stat-value').textContent = userData.completedTasks;
-            statElements[2].querySelector('.stat-value').textContent = userData.activeTasks;
-            statElements[3].querySelector('.stat-value').textContent = '95%';
-        }
-
-        // Прогресс уровня
-        const progressPercent = (userData.levelProgress / 10) * 100;
-        document.getElementById('level-progress-bar').style.width = progressPercent + '%';
-        document.querySelector('.level-count').textContent = userData.levelProgress + '/10 заданий';
-        document.querySelector('.profile-level').textContent = 'Уровень ' + userData.level;
-
-        // Реферальная система
-        document.getElementById('ref-invited').textContent = '5';
-        document.getElementById('ref-earned').textContent = '250 ₽';
-        document.getElementById('referral-code').textContent = 'GOLD' + (userData.telegramId || '123456');
-    }
-
-    // Загрузка заданий с сервера
-    async function loadTasks(search = '', filter = 'all') {
+    // Загрузка заданий
+    async function loadTasks(search = '', category = 'all') {
         try {
             const params = new URLSearchParams();
             if (search) params.append('search', search);
-            if (filter !== 'all') params.append('category', filter);
+            if (category !== 'all') params.append('category', category);
             
             const url = `/api/tasks?${params.toString()}`;
             const headers = authToken ? { 'Authorization': `Bearer ${authToken}` } : {};
@@ -2322,17 +2284,14 @@
             if (response.ok) {
                 const data = await response.json();
                 tasksData = data.tasks || [];
-                renderTasks();
             } else {
-                // Тестовые данные если сервер недоступен
                 tasksData = getDemoTasks();
-                renderTasks();
             }
         } catch (error) {
-            // Тестовые данные при ошибке
             tasksData = getDemoTasks();
-            renderTasks();
         }
+        
+        renderTasks();
     }
 
     // Демо-задания
@@ -2346,35 +2305,22 @@
                 description: "Подпишитесь на наш Telegram канал и оставайтесь подписанным минимум 3 дня.",
                 time: "5 мин",
                 status: "active",
-                available: 15,
-                link: "https://t.me/linkgold_channel"
+                available: 15
             },
             {
-                id: 2,
+                id: 2, 
                 title: "Просмотр YouTube видео",
-                category: "view", 
+                category: "view",
                 price: 10,
                 description: "Посмотрите видео на YouTube до конца и поставьте лайк.",
                 time: "10 мин",
-                status: "active",
-                available: 20,
-                link: "https://youtube.com"
-            },
-            {
-                id: 3,
-                title: "Комментарий в группе",
-                category: "comment",
-                price: 20,
-                description: "Оставьте содержательный комментарий в указанной группе.",
-                time: "7 мин", 
-                status: "active",
-                available: 10,
-                link: "https://t.me"
+                status: "active", 
+                available: 20
             }
         ];
     }
 
-    // Рендер заданий
+    // Отображение заданий
     function renderTasks() {
         const container = document.getElementById('new-tasks');
         if (!container) return;
@@ -2385,7 +2331,7 @@
         }
 
         container.innerHTML = tasksData.map(task => `
-            <div class="task-card fade-in" data-task-id="${task.id}">
+            <div class="task-card fade-in">
                 <div class="task-header">
                     <div>
                         <div class="task-title">${task.title}</div>
@@ -2404,11 +2350,6 @@
 
     // Запуск задания
     async function startTask(taskId) {
-        if (!userData) {
-            showLoginScreen();
-            return;
-        }
-
         const task = tasksData.find(t => t.id === taskId);
         if (!task) return;
 
@@ -2424,13 +2365,10 @@
                 });
 
                 if (response.ok) {
-                    showSuccess('Задание начато!');
+                    showNotification('✅ Задание начато!', 'success');
                 }
             }
 
-            // Открываем ссылку задания
-            window.open(task.link, '_blank');
-            
             // Добавляем в подтверждение
             confirmationTasks.push({
                 ...task,
@@ -2442,7 +2380,7 @@
             updateConfirmationTab();
 
         } catch (error) {
-            showError('Ошибка: ' + error.message);
+            showNotification('❌ Ошибка начала задания', 'error');
         }
     }
 
@@ -2452,9 +2390,7 @@
 
         try {
             const response = await fetch('/api/chat/messages', {
-                headers: {
-                    'Authorization': `Bearer ${authToken}`
-                }
+                headers: { 'Authorization': `Bearer ${authToken}` }
             });
 
             if (response.ok) {
@@ -2475,7 +2411,7 @@
 
         try {
             if (authToken) {
-                const response = await fetch('/api/chat/messages', {
+                await fetch('/api/chat/messages', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -2485,7 +2421,7 @@
                 });
             }
 
-            // Добавляем сообщение в интерфейс
+            // Добавляем в интерфейс
             chatMessages.push({
                 message: message,
                 is_admin: false,
@@ -2498,15 +2434,15 @@
             // Симуляция ответа админа
             setTimeout(() => {
                 chatMessages.push({
-                    message: "Спасибо за обращение! Мы ответим вам в ближайшее время.",
-                    is_admin: true,
+                    message: "Спасибо за обращение! Мы ответим в ближайшее время.",
+                    is_admin: true, 
                     created_at: new Date().toISOString()
                 });
                 renderChatMessages();
             }, 2000);
 
         } catch (error) {
-            showError('Ошибка отправки: ' + error.message);
+            showNotification('❌ Ошибка отправки', 'error');
         }
     }
 
@@ -2523,66 +2459,91 @@
         container.scrollTop = container.scrollHeight;
     }
 
-    // Остальные функции вашего интерфейса остаются без изменений
-    function showTab(tabName) {
-        currentTab = tabName;
-        // ... ваш существующий код ...
-    }
+    // Обновление интерфейса
+    function updateUserInterface() {
+        if (!userData) return;
 
-    function showLoginScreen() {
-        document.getElementById('app').innerHTML = `
-            <div class="card">
-                <h2 style="text-align: center; margin-bottom: 20px;">Добро пожаловать в LinkGold!</h2>
-                <button class="btn btn-primary" style="width: 100%;" onclick="simulateTelegramAuth()">
-                    Войти через Telegram
-                </button>
-            </div>
-        `;
-        document.querySelector('.nav').style.display = 'none';
+        // Основная информация
+        document.getElementById('username').textContent = userData.username;
+        document.getElementById('user-tg').textContent = userData.userTg || userData.username;
+        document.getElementById('user-balance-main').textContent = userData.balance + ' ₽';
+
+        // Статистика профиля
+        const statElements = document.querySelectorAll('.profile-stat .stat-value');
+        if (statElements.length >= 4) {
+            statElements[0].textContent = userData.balance + ' ₽';
+            statElements[1].textContent = userData.completedTasks;
+            statElements[2].textContent = userData.activeTasks;
+            statElements[3].textContent = '95%';
+        }
+
+        // Уровень
+        const progressPercent = (userData.levelProgress / 10) * 100;
+        document.getElementById('level-progress-bar').style.width = progressPercent + '%';
+        document.querySelector('.level-count').textContent = userData.levelProgress + '/10 заданий';
+        document.querySelector('.profile-level').textContent = 'Уровень ' + userData.level;
+
+        // Реферальная система
+        document.getElementById('ref-invited').textContent = '5';
+        document.getElementById('ref-earned').textContent = '250 ₽';
+        document.getElementById('referral-code').textContent = 'GOLD' + (userData.telegramId?.slice(-6) || '123456');
     }
 
     // Вспомогательные функции
     function getCategoryName(category) {
         const categories = {
-            'subscribe': 'Подписка',
-            'view': 'Просмотр', 
-            'comment': 'Комментарий',
-            'repost': 'Репост',
+            'subscribe': 'Подписки',
+            'view': 'Просмотры',
+            'comment': 'Комментарии', 
+            'repost': 'Репосты',
             'social': 'Соцсети'
         };
         return categories[category] || category;
     }
 
-    function showError(message) {
-        console.error('Ошибка:', message);
-        // Можно добавить уведомление в интерфейс
+    function showNotification(message, type = 'info') {
+        // Можно добавить красивые уведомления
+        console.log(`${type}: ${message}`);
     }
 
-    function showSuccess(message) {
-        console.log('Успех:', message);
-        // Можно добавить уведомление в интерфейс  
+    function showLoading(show) {
+        // Реализуйте индикатор загрузки если нужно
     }
 
-    // Инициализация обработчиков
-    function setupEventListeners() {
-        // Поиск заданий
-        const searchInput = document.getElementById('task-search');
-        if (searchInput) {
-            searchInput.addEventListener('input', (e) => {
-                setTimeout(() => loadTasks(e.target.value), 300);
-            });
-        }
+    function showLoginScreen() {
+        // Ваш код для показа экрана входа
+        document.body.innerHTML = `
+            <div class="container">
+                <header class="header">
+                    <div class="logo-text">LinkGold</div>
+                    <div class="slogan">Монетизируйте вашу активность</div>
+                </header>
+                <div class="card">
+                    <h2 style="text-align: center; margin-bottom: 20px;">Добро пожаловать!</h2>
+                    <button class="btn btn-primary" onclick="loginWithTelegram()" style="width: 100%; margin: 10px 0;">
+                        Войти через Telegram
+                    </button>
+                    <button class="btn" onclick="setupTestMode()" style="width: 100%; margin: 10px 0;">
+                        Тестовый режим
+                    </button>
+                </div>
+            </div>
+        `;
+    }
 
-        // Фильтры заданий
-        document.querySelectorAll('.filter-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-                loadTasks('', btn.dataset.filter);
-            });
-        });
+    // Остальные ваши функции остаются без изменений
+    function showMainTab() { /* ваш код */ }
+    function showTasksTab() { /* ваш код */ }
+    function showProfileTab() { /* ваш код */ }
+    function showTaskTab(tab) { /* ваш код */ }
+    function updateConfirmationTab() { /* ваш код */ }
+    function showBalanceModal() { /* ваш код */ }
+    function openAdminChat() { /* ваш код */ }
+    // ... все остальные функции
 
-        // Чат
+    // Инициализация обработчиков после загрузки DOM
+    setTimeout(() => {
+        // Обработчики для чата
         const chatSend = document.querySelector('#admin-chat .chat-send');
         const chatInput = document.querySelector('#admin-chat .chat-input input');
         
@@ -2592,10 +2553,25 @@
                 if (e.key === 'Enter') sendChatMessage();
             });
         }
-    }
 
-    // Запуск после загрузки DOM
-    setTimeout(setupEventListeners, 100);
+        // Обработчики поиска
+        const searchInput = document.getElementById('task-search');
+        if (searchInput) {
+            searchInput.addEventListener('input', (e) => {
+                setTimeout(() => loadTasks(e.target.value), 300);
+            });
+        }
+
+        // Обработчики фильтров
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                loadTasks('', btn.dataset.filter);
+            });
+        });
+
+    }, 1000);
 </script>
 </body>
 </html>

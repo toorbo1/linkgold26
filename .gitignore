@@ -34,3 +34,8 @@ Thumbs.db
 # SQLite
 *.db
 *.db-journal
+
+node_modules/
+.env
+*.db
+*.log
