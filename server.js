@@ -644,3 +644,85 @@ app.listen(PORT, '0.0.0.0', () => {
     console.log(`📍 http://localhost:${PORT}`);
     console.log('================================');
 });
+// Добавьте эти endpoint'ы после существующих API endpoints
+
+// Рассылка сообщений всем пользователям
+app.post('/api/admin/broadcast', authenticateToken, (req, res) => {
+    if (!req.user.isAdmin) {
+        return res.status(403).json({ success: false, error: 'Доступ запрещен' });
+    }
+
+    const { message } = req.body;
+
+    if (!message) {
+        return res.status(400).json({ success: false, error: 'Сообщение обязательно' });
+    }
+
+    // Сохраняем сообщение для всех пользователей
+    db.all("SELECT telegram_id FROM users", (err, users) => {
+        if (err) {
+            return res.status(500).json({ success: false, error: 'Ошибка БД' });
+        }
+
+        users.forEach(user => {
+            db.run("INSERT INTO chats (user_id, message, is_admin) VALUES (?, ?, 1)",
+                [user.telegram_id, message]);
+        });
+
+        // Уведомляем через Telegram бота
+        if (bot) {
+            db.all("SELECT telegram_id FROM users WHERE is_admin = 1", (err, admins) => {
+                admins.forEach(admin => {
+                    bot.sendMessage(admin.telegram_id, 
+                        `📢 Сделана рассылка для всех пользователей:\n\n${message}`
+                    );
+                });
+            });
+        }
+
+        res.json({ success: true, message: 'Сообщение отправлено всем пользователям' });
+    });
+});
+
+// Управление администраторами
+app.post('/api/admin/manage', authenticateToken, (req, res) => {
+    if (!req.user.isAdmin) {
+        return res.status(403).json({ success: false, error: 'Доступ запрещен' });
+    }
+
+    const { action, username } = req.body;
+
+    if (!action || !username) {
+        return res.status(400).json({ success: false, error: 'Неверные параметры' });
+    }
+
+    if (action === 'hire') {
+        // Найм администратора
+        db.run("UPDATE users SET is_admin = 1 WHERE username = ?", [username], function(err) {
+            if (err) {
+                return res.status(500).json({ success: false, error: 'Ошибка БД' });
+            }
+
+            if (this.changes === 0) {
+                return res.status(404).json({ success: false, error: 'Пользователь не найден' });
+            }
+
+            res.json({ success: true, message: 'Администратор нанят' });
+        });
+    } else if (action === 'fire') {
+        // Удаление администратора (кроме главного)
+        db.run("UPDATE users SET is_admin = 0 WHERE username = ? AND telegram_id != '8036875641'", [username], function(err) {
+            if (err) {
+                return res.status(500).json({ success: false, error: 'Ошибка БД' });
+            }
+
+            if (this.changes === 0) {
+                return res.status(404).json({ success: false, error: 'Пользователь не найден или это главный администратор' });
+            }
+
+            res.json({ success: true, message: 'Администратор удален' });
+        });
+    } else {
+        res.status(400).json({ success: false, error: 'Неверное действие' });
+    }
+});
