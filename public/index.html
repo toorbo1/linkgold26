@@ -1672,6 +1672,218 @@
     border-radius: 8px;
     border-left: 3px solid var(--warning);
 }
+/* Стили для админ-панели */
+.admin-buttons-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.admin-btn-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.admin-btn-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+    border-color: var(--accent);
+}
+
+.admin-btn-icon {
+    font-size: 32px;
+    margin-bottom: 12px;
+}
+
+.admin-btn-title {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: var(--text-primary);
+}
+
+.admin-btn-desc {
+    font-size: 13px;
+    color: var(--text-secondary);
+    line-height: 1.4;
+}
+
+/* Формы админ-панели */
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.form-group.full-width {
+    grid-column: 1 / -1;
+}
+
+.form-group label {
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: var(--text-primary);
+}
+
+.form-input, .form-textarea {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px;
+    color: var(--text-primary);
+    font-size: 14px;
+    transition: border-color 0.3s ease;
+}
+
+.form-input:focus, .form-textarea:focus {
+    outline: none;
+    border-color: var(--accent);
+}
+
+.form-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+    margin-top: 24px;
+}
+
+.btn-primary {
+    background: var(--accent);
+    color: white;
+}
+
+.btn-secondary {
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    border: 1px solid var(--border);
+}
+
+.btn-small {
+    padding: 8px 16px;
+    font-size: 13px;
+}
+
+/* Стили для списка проверки */
+.review-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.review-container {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.review-task-item {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 12px;
+}
+
+.review-task-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 12px;
+}
+
+.review-task-title {
+    font-weight: 600;
+    font-size: 16px;
+}
+
+.review-task-price {
+    color: var(--accent);
+    font-weight: 700;
+    font-size: 18px;
+}
+
+.review-task-user {
+    font-size: 14px;
+    color: var(--text-secondary);
+    margin-bottom: 8px;
+}
+
+.review-task-comment {
+    background: var(--card-bg);
+    padding: 12px;
+    border-radius: 6px;
+    margin-bottom: 12px;
+    font-size: 14px;
+}
+
+.review-task-actions {
+    display: flex;
+    gap: 8px;
+}
+
+/* Список админов */
+.admins-list {
+    margin-top: 24px;
+}
+
+.admin-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px;
+    background: var(--bg-secondary);
+    border-radius: 8px;
+    margin-bottom: 8px;
+}
+
+.admin-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.admin-name {
+    font-weight: 600;
+}
+
+.admin-id {
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+
+.admin-actions {
+    display: flex;
+    gap: 8px;
+}
+
+/* Уведомления */
+.notification-badge {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    background: var(--error);
+    color: white;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 600;
+}
     </style>
 </head>
 <body>
@@ -2242,6 +2454,129 @@
             </button>
         </div>
     </div>
+    <!-- В разделе админ-панели добавьте эти кнопки -->
+<div id="admin-panel" class="admin-panel fade-in" style="display: none;">
+    <div class="admin-title">Панель администратора</div>
+    
+    <div class="admin-buttons-grid">
+        <div class="admin-btn-card" onclick="showTaskCreation()">
+            <div class="admin-btn-icon">📝</div>
+            <div class="admin-btn-title">Создать задание</div>
+            <div class="admin-btn-desc">Добавить новое задание для пользователей</div>
+        </div>
+        
+        <div class="admin-btn-card" onclick="showTaskReview()">
+            <div class="admin-btn-icon">✅</div>
+            <div class="admin-btn-title">Проверка заданий</div>
+            <div class="admin-btn-desc">Проверить выполненные задания</div>
+            <div class="notification-badge" id="review-badge" style="display: none;">0</div>
+        </div>
+        
+        <div class="admin-btn-card" onclick="showAdminChats()">
+            <div class="admin-btn-icon">💬</div>
+            <div class="admin-btn-title">Чаты поддержки</div>
+            <div class="admin-btn-desc">Общение с пользователями</div>
+        </div>
+        
+        <div class="admin-btn-card" id="admin-management-btn" onclick="showAdminManagement()" style="display: none;">
+            <div class="admin-btn-icon">👑</div>
+            <div class="admin-btn-title">Управление админами</div>
+            <div class="admin-btn-desc">Добавить/удалить администраторов</div>
+        </div>
+    </div>
+
+    <!-- Форма создания задания -->
+    <div id="task-creation-form" class="admin-form" style="display: none;">
+        <h3>Создание нового задания</h3>
+        
+        <div class="form-row">
+            <div class="form-group">
+                <label>Название задания</label>
+                <input type="text" class="form-input" id="task-title" placeholder="Например: Подписка на канал">
+            </div>
+        </div>
+        
+        <div class="form-row">
+            <div class="form-group">
+                <label>Категория</label>
+                <select class="form-input" id="task-category">
+                    <option value="subscribe">📢 Подписки</option>
+                    <option value="view">👀 Просмотры</option>
+                    <option value="comment">💬 Комментарии</option>
+                    <option value="repost">🔄 Репосты</option>
+                    <option value="social">📱 Соцсети</option>
+                    <option value="other">🔧 Другое</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label>Цена (руб)</label>
+                <input type="number" class="form-input" id="task-price" placeholder="10" min="1" max="1000">
+            </div>
+        </div>
+        
+        <div class="form-row">
+            <div class="form-group">
+                <label>Время выполнения</label>
+                <input type="text" class="form-input" id="task-time" placeholder="Например: 5 минут">
+            </div>
+            
+            <div class="form-group">
+                <label>Доступно заданий</label>
+                <input type="number" class="form-input" id="task-available" placeholder="10" min="1" max="1000" value="10">
+            </div>
+        </div>
+        
+        <div class="form-row">
+            <div class="form-group full-width">
+                <label>Ссылка для выполнения</label>
+                <input type="url" class="form-input" id="task-link" placeholder="https://t.me/channel_name">
+            </div>
+        </div>
+        
+        <div class="form-row">
+            <div class="form-group full-width">
+                <label>Описание задания</label>
+                <textarea class="form-textarea" id="task-description" placeholder="Подробное описание задания, требования к выполнению..." rows="4"></textarea>
+            </div>
+        </div>
+        
+        <div class="form-actions">
+            <button type="button" class="btn btn-secondary" onclick="hideTaskCreation()">Отмена</button>
+            <button type="button" class="btn btn-primary" onclick="createTask()">Создать задание</button>
+        </div>
+    </div>
+
+    <!-- Список заданий на проверку -->
+    <div id="task-review-list" class="admin-form" style="display: none;">
+        <div class="review-header">
+            <h3>Задания на проверку</h3>
+            <button class="btn btn-small" onclick="loadPendingReviews()">Обновить</button>
+        </div>
+        <div id="review-tasks-container" class="review-container"></div>
+    </div>
+
+    <!-- Управление админами -->
+    <div id="admin-management" class="admin-form" style="display: none;">
+        <h3>Управление администраторами</h3>
+        
+        <div class="form-row">
+            <div class="form-group full-width">
+                <label>Telegram ID пользователя</label>
+                <input type="text" class="form-input" id="admin-telegram-id" placeholder="123456789">
+            </div>
+        </div>
+        
+        <div class="form-actions">
+            <button class="btn btn-primary" onclick="addAdmin()">Добавить админа</button>
+        </div>
+        
+        <div class="admins-list">
+            <h4>Текущие администраторы</h4>
+            <div id="admins-list-container"></div>
+        </div>
+    </div>
+</div>
 <script>
     // Данные пользователя
     let userData = {
@@ -3436,6 +3771,365 @@ function copyReferralCode() {
         document.body.removeChild(textArea);
         alert('Реферальный код скопирован: ' + code + '\n\nПоделитесь этим кодом с друзьями!');
     }
+}
+// Функции для показа/скрытия разделов админ-панели
+function showTaskCreation() {
+    document.getElementById('task-creation-form').style.display = 'block';
+    document.getElementById('task-review-list').style.display = 'none';
+    document.getElementById('admin-management').style.display = 'none';
+}
+
+function hideTaskCreation() {
+    document.getElementById('task-creation-form').style.display = 'none';
+}
+
+function showTaskReview() {
+    document.getElementById('task-creation-form').style.display = 'none';
+    document.getElementById('task-review-list').style.display = 'block';
+    document.getElementById('admin-management').style.display = 'none';
+    loadPendingReviews();
+}
+
+function showAdminManagement() {
+    document.getElementById('task-creation-form').style.display = 'none';
+    document.getElementById('task-review-list').style.display = 'none';
+    document.getElementById('admin-management').style.display = 'block';
+    loadAdminsList();
+}
+
+function showAdminChats() {
+    openAdminChat();
+}
+
+// Создание задания
+async function createTask() {
+    const title = document.getElementById('task-title').value.trim();
+    const category = document.getElementById('task-category').value;
+    const price = parseFloat(document.getElementById('task-price').value);
+    const time = document.getElementById('task-time').value.trim();
+    const link = document.getElementById('task-link').value.trim();
+    const description = document.getElementById('task-description').value.trim();
+    const available = parseInt(document.getElementById('task-available').value) || 10;
+
+    // Валидация
+    if (!title || !price || !time || !link || !description) {
+        showNotification('Заполните все обязательные поля', 'error');
+        return;
+    }
+
+    if (price < 1 || price > 1000) {
+        showNotification('Цена должна быть от 1 до 1000 рублей', 'error');
+        return;
+    }
+
+    try {
+        const token = authToken || localStorage.getItem('auth_token');
+        const response = await fetch('/api/admin/tasks', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                title,
+                category,
+                price,
+                time,
+                link,
+                description,
+                available
+            })
+        });
+
+        const data = await response.json();
+        
+        if (data.success) {
+            showNotification('Задание успешно создано!', 'success');
+            
+            // Очищаем форму
+            document.getElementById('task-title').value = '';
+            document.getElementById('task-price').value = '';
+            document.getElementById('task-time').value = '';
+            document.getElementById('task-link').value = '';
+            document.getElementById('task-description').value = '';
+            document.getElementById('task-available').value = '10';
+            
+            // Скрываем форму
+            hideTaskCreation();
+            
+            // Обновляем список заданий
+            await loadTasks();
+        } else {
+            showNotification('Ошибка: ' + data.error, 'error');
+        }
+    } catch (error) {
+        console.error('Ошибка создания задания:', error);
+        showNotification('Ошибка сети. Попробуйте позже.', 'error');
+    }
+}
+
+// Загрузка заданий на проверку
+async function loadPendingReviews() {
+    try {
+        const token = authToken || localStorage.getItem('auth_token');
+        const response = await fetch('/api/admin/tasks/review', {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            if (data.success) {
+                displayPendingReviews(data.tasks);
+                
+                // Обновляем бейдж уведомлений
+                const badge = document.getElementById('review-badge');
+                if (data.tasks.length > 0) {
+                    badge.textContent = data.tasks.length;
+                    badge.style.display = 'flex';
+                } else {
+                    badge.style.display = 'none';
+                }
+            }
+        }
+    } catch (error) {
+        console.error('Ошибка загрузки заданий на проверку:', error);
+    }
+}
+
+// Отображение заданий на проверку
+function displayPendingReviews(tasks) {
+    const container = document.getElementById('review-tasks-container');
+    
+    if (!tasks || tasks.length === 0) {
+        container.innerHTML = `
+            <div class="no-tasks">
+                <div class="no-tasks-icon">✅</div>
+                <div>Нет заданий на проверку</div>
+            </div>
+        `;
+        return;
+    }
+
+    container.innerHTML = tasks.map(task => `
+        <div class="review-task-item">
+            <div class="review-task-header">
+                <div class="review-task-title">${task.title}</div>
+                <div class="review-task-price">${task.price} ₽</div>
+            </div>
+            <div class="review-task-user">
+                <strong>Пользователь:</strong> ${task.username} (${task.telegram_id})
+            </div>
+            ${task.comment ? `
+                <div class="review-task-comment">
+                    <strong>Комментарий:</strong> ${task.comment}
+                </div>
+            ` : ''}
+            ${task.photo_url ? `
+                <div class="review-task-photo">
+                    <strong>Фото:</strong> 
+                    <img src="${task.photo_url}" alt="Подтверждение задания" style="max-width: 100%; margin-top: 8px; border-radius: 4px;">
+                </div>
+            ` : ''}
+            <div class="review-task-actions">
+                <button class="btn btn-primary btn-small" onclick="approveTask(${task.id})">✅ Принять</button>
+                <button class="btn btn-secondary btn-small" onclick="rejectTask(${task.id})">❌ Отклонить</button>
+                <button class="btn btn-small" onclick="openUserChat('${task.telegram_id}')">💬 Написать</button>
+            </div>
+        </div>
+    `).join('');
+}
+
+// Одобрение задания
+async function approveTask(taskId) {
+    if (!confirm('Вы уверены, что хотите одобрить это задание?')) return;
+
+    try {
+        const token = authToken || localStorage.getItem('auth_token');
+        const response = await fetch('/api/admin/tasks/approve', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ taskId })
+        });
+
+        const data = await response.json();
+        
+        if (data.success) {
+            showNotification('Задание одобрено! Деньги начислены пользователю.', 'success');
+            await loadPendingReviews();
+        } else {
+            showNotification('Ошибка: ' + data.error, 'error');
+        }
+    } catch (error) {
+        console.error('Ошибка одобрения задания:', error);
+        showNotification('Ошибка сети', 'error');
+    }
+}
+
+// Отклонение задания
+async function rejectTask(taskId) {
+    if (!confirm('Вы уверены, что хотите отклонить это задание?')) return;
+
+    try {
+        const token = authToken || localStorage.getItem('auth_token');
+        const response = await fetch('/api/admin/tasks/reject', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ taskId })
+        });
+
+        const data = await response.json();
+        
+        if (data.success) {
+            showNotification('Задание отклонено!', 'warning');
+            await loadPendingReviews();
+        } else {
+            showNotification('Ошибка: ' + data.error, 'error');
+        }
+    } catch (error) {
+        console.error('Ошибка отклонения задания:', error);
+        showNotification('Ошибка сети', 'error');
+    }
+}
+
+// Управление админами
+async function loadAdminsList() {
+    try {
+        const token = authToken || localStorage.getItem('auth_token');
+        const response = await fetch('/api/admin/admins', {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            if (data.success) {
+                displayAdminsList(data.admins);
+            }
+        }
+    } catch (error) {
+        console.error('Ошибка загрузки списка админов:', error);
+    }
+}
+
+function displayAdminsList(admins) {
+    const container = document.getElementById('admins-list-container');
+    
+    container.innerHTML = admins.map(admin => `
+        <div class="admin-item">
+            <div class="admin-info">
+                <div class="admin-name">${admin.username} ${admin.telegram_id === '8036875641' ? '👑 (Главный)' : ''}</div>
+                <div class="admin-id">ID: ${admin.telegram_id}</div>
+            </div>
+            ${admin.telegram_id !== '8036875641' ? `
+                <div class="admin-actions">
+                    <button class="btn btn-small btn-secondary" onclick="removeAdmin('${admin.telegram_id}')">Удалить</button>
+                </div>
+            ` : ''}
+        </div>
+    `).join('');
+}
+
+async function addAdmin() {
+    const telegramId = document.getElementById('admin-telegram-id').value.trim();
+    
+    if (!telegramId) {
+        showNotification('Введите Telegram ID пользователя', 'error');
+        return;
+    }
+
+    try {
+        const token = authToken || localStorage.getItem('auth_token');
+        const response = await fetch('/api/admin/admins', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ telegramId })
+        });
+
+        const data = await response.json();
+        
+        if (data.success) {
+            showNotification('Администратор добавлен!', 'success');
+            document.getElementById('admin-telegram-id').value = '';
+            await loadAdminsList();
+        } else {
+            showNotification('Ошибка: ' + data.error, 'error');
+        }
+    } catch (error) {
+        console.error('Ошибка добавления админа:', error);
+        showNotification('Ошибка сети', 'error');
+    }
+}
+
+async function removeAdmin(telegramId) {
+    if (!confirm('Вы уверены, что хотите удалить этого администратора?')) return;
+
+    try {
+        const token = authToken || localStorage.getItem('auth_token');
+        const response = await fetch(`/api/admin/admins/${telegramId}`, {
+            method: 'DELETE',
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+
+        const data = await response.json();
+        
+        if (data.success) {
+            showNotification('Администратор удален!', 'success');
+            await loadAdminsList();
+        } else {
+            showNotification('Ошибка: ' + data.error, 'error');
+        }
+    } catch (error) {
+        console.error('Ошибка удаления админа:', error);
+        showNotification('Ошибка сети', 'error');
+    }
+}
+
+// Вспомогательная функция для уведомлений
+function showNotification(message, type = 'info') {
+    // Создаем временное уведомление
+    const notification = document.createElement('div');
+    notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 16px 20px;
+        border-radius: 8px;
+        color: white;
+        font-weight: 600;
+        z-index: 10000;
+        animation: slideIn 0.3s ease;
+        max-width: 300px;
+    `;
+    
+    const colors = {
+        success: '#10b981',
+        error: '#ef4444',
+        warning: '#f59e0b',
+        info: '#3b82f6'
+    };
+    
+    notification.style.background = colors[type] || colors.info;
+    notification.textContent = message;
+    
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        notification.remove();
+    }, 3000);
 }
 </script>
 </body>
