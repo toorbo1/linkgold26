@@ -99,6 +99,7 @@ function initializeDatabase() {
                 const referralCode = generateReferralCode();
                 db.run("INSERT INTO users (telegram_id, username, first_name, is_admin, referral_code) VALUES ('8036875641', 'LinkGoldAdmin', 'Администратор', 1, ?)", 
                     [referralCode]);
+                console.log('✅ Главный администратор создан');
             }
         });
 
@@ -108,7 +109,9 @@ function initializeDatabase() {
                 const tasks = [
                     ['Подписка на Telegram канал', 'subscribe', 15, 'Подпишитесь на канал и оставайтесь подписанным 3 дня', '5 мин', 'https://t.me/linkgold_channel', '8036875641'],
                     ['Просмотр YouTube видео', 'view', 10, 'Посмотрите видео до конца и поставьте лайк', '10 мин', 'https://youtube.com', '8036875641'],
-                    ['Комментарий в группе', 'comment', 20, 'Оставьте содержательный комментарий', '7 мин', 'https://t.me/test_group', '8036875641']
+                    ['Комментарий в группе', 'comment', 20, 'Оставьте содержательный комментарий', '7 мин', 'https://t.me/test_group', '8036875641'],
+                    ['Лайк поста в Instagram', 'social', 12, 'Поставьте лайк на последний пост', '3 мин', 'https://instagram.com', '8036875641'],
+                    ['Репост в Telegram', 'repost', 25, 'Сделайте репост сообщения в ваш канал', '8 мин', 'https://t.me/linkgold_news', '8036875641']
                 ];
                 
                 const stmt = db.prepare("INSERT INTO tasks (title, category, price, description, time, link, admin_id) VALUES (?, ?, ?, ?, ?, ?, ?)");
@@ -173,7 +176,10 @@ app.post('/api/auth/telegram', (req, res) => {
         return res.status(400).json({ success: false, error: 'Telegram ID обязателен' });
     }
 
-    db.get("SELECT * FROM users WHERE telegram_id = ?", [telegramId], (err, user) => {
+    db.get(`SELECT u.*, 
+                   (SELECT COUNT(*) FROM referrals WHERE referrer_id = u.telegram_id) as referral_count,
+                   (SELECT COALESCE(SUM(earned_amount), 0) FROM referrals WHERE referrer_id = u.telegram_id) as referral_earned
+            FROM users u WHERE u.telegram_id = ?`, [telegramId], (err, user) => {
         if (err) {
             return res.status(500).json({ success: false, error: 'Ошибка БД' });
         }
@@ -187,7 +193,7 @@ app.post('/api/auth/telegram', (req, res) => {
                         console.error('Ошибка обновления пользователя:', err);
                     }
                     
-                    // Получаем обновленные данные пользователя с реферальной статистикой
+                    // Получаем обновленные данные пользователя
                     db.get(`SELECT u.*, 
                            (SELECT COUNT(*) FROM referrals WHERE referrer_id = u.telegram_id) as referral_count,
                            (SELECT COALESCE(SUM(earned_amount), 0) FROM referrals WHERE referrer_id = u.telegram_id) as referral_earned
@@ -229,18 +235,20 @@ app.post('/api/auth/telegram', (req, res) => {
             let referredBy = null;
 
             // Проверяем реферальный код
-            if (referralCode) {
-                db.get("SELECT telegram_id FROM users WHERE referral_code = ?", [referralCode], (err, referrer) => {
-                    if (referrer && referrer.telegram_id !== telegramId) {
-                        referredBy = referrer.telegram_id;
-                    }
-                    createNewUser();
-                });
-            } else {
-                createNewUser();
-            }
+            const processReferral = (callback) => {
+                if (referralCode) {
+                    db.get("SELECT telegram_id FROM users WHERE referral_code = ?", [referralCode], (err, referrer) => {
+                        if (referrer && referrer.telegram_id !== telegramId) {
+                            referredBy = referrer.telegram_id;
+                        }
+                        callback();
+                    });
+                } else {
+                    callback();
+                }
+            };
 
-            function createNewUser() {
+            processReferral(() => {
                 db.run("INSERT INTO users (telegram_id, username, first_name, last_name, referral_code, referred_by) VALUES (?, ?, ?, ?, ?, ?)",
                     [telegramId, username || `user_${telegramId}`, firstName || 'User', lastName || '', newReferralCode, referredBy],
                     function(err) {
@@ -285,7 +293,7 @@ app.post('/api/auth/telegram', (req, res) => {
                         });
                     }
                 );
-            }
+            });
         }
     });
 });
@@ -362,17 +370,61 @@ app.post('/api/tasks', authenticateToken, (req, res) => {
 app.post('/api/tasks/start', authenticateToken, (req, res) => {
     const { taskId } = req.body;
 
-    db.run("INSERT INTO user_tasks (user_id, task_id) VALUES (?, ?)",
-        [req.user.telegramId, taskId],
+    // Проверяем, не начал ли пользователь уже это задание
+    db.get("SELECT * FROM user_tasks WHERE user_id = ? AND task_id = ?", [req.user.telegramId, taskId], (err, existingTask) => {
+        if (err) {
+            return res.status(500).json({ success: false, error: 'Ошибка БД' });
+        }
+
+        if (existingTask) {
+            return res.status(400).json({ success: false, error: 'Вы уже начали это задание' });
+        }
+
+        db.run("INSERT INTO user_tasks (user_id, task_id) VALUES (?, ?)",
+            [req.user.telegramId, taskId],
+            function(err) {
+                if (err) {
+                    return res.status(500).json({ success: false, error: 'Ошибка начала задания' });
+                }
+
+                db.run("UPDATE users SET active_tasks = active_tasks + 1 WHERE telegram_id = ?",
+                    [req.user.telegramId]);
+
+                res.json({ success: true, message: 'Задание начато' });
+            }
+        );
+    });
+});
+
+// Подтверждение выполнения задания
+app.post('/api/tasks/complete', authenticateToken, (req, res) => {
+    const { taskId, photoUrl, comment } = req.body;
+
+    db.run("UPDATE user_tasks SET status = 'completed', photo_url = ?, comment = ? WHERE user_id = ? AND task_id = ?",
+        [photoUrl, comment, req.user.telegramId, taskId],
         function(err) {
             if (err) {
-                return res.status(500).json({ success: false, error: 'Ошибка начала задания' });
+                return res.status(500).json({ success: false, error: 'Ошибка подтверждения задания' });
             }
 
-            db.run("UPDATE users SET active_tasks = active_tasks + 1 WHERE telegram_id = ?",
-                [req.user.telegramId]);
+            // Получаем цену задания
+            db.get("SELECT price FROM tasks WHERE id = ?", [taskId], (err, task) => {
+                if (task) {
+                    // Начисляем деньги пользователю
+                    db.run("UPDATE users SET balance = balance + ?, active_tasks = active_tasks - 1, completed_tasks = completed_tasks + 1, level_progress = level_progress + 1 WHERE telegram_id = ?",
+                        [task.price, req.user.telegramId]);
 
-            res.json({ success: true, message: 'Задание начато' });
+                    // Проверяем уровень
+                    db.get("SELECT level_progress, level FROM users WHERE telegram_id = ?", [req.user.telegramId], (err, user) => {
+                        if (user.level_progress >= 10) {
+                            db.run("UPDATE users SET level = level + 1, level_progress = 0 WHERE telegram_id = ?",
+                                [req.user.telegramId]);
+                        }
+                    });
+
+                    res.json({ success: true, message: 'Задание отправлено на проверку' });
+                }
+            });
         }
     );
 });
@@ -410,52 +462,93 @@ app.get('/api/user/profile', authenticateToken, (req, res) => {
     });
 });
 
-// Сообщения чата
-app.get('/api/chat/messages', authenticateToken, (req, res) => {
-    db.all("SELECT * FROM chats WHERE user_id = ? ORDER BY created_at ASC",
-        [req.user.telegramId],
-        (err, messages) => {
-            if (err) {
-                return res.status(500).json({ success: false, error: 'Ошибка БД' });
-            }
-            res.json({ success: true, messages: messages || [] });
-        }
-    );
-});
-
-app.post('/api/chat/messages', authenticateToken, (req, res) => {
-    const { message } = req.body;
-
-    if (!message) {
-        return res.status(400).json({ success: false, error: 'Сообщение обязательно' });
-    }
-
-    db.run("INSERT INTO chats (user_id, message) VALUES (?, ?)",
-        [req.user.telegramId, message],
-        function(err) {
-            if (err) {
-                return res.status(500).json({ success: false, error: 'Ошибка отправки' });
-            }
-            res.json({ success: true, message: 'Сообщение отправлено' });
-        }
-    );
-});
-
-// Задания пользователя
+// Получение заданий пользователя
 app.get('/api/user/tasks', authenticateToken, (req, res) => {
-    const query = `
-        SELECT ut.*, t.title, t.price, t.category 
+    const { status } = req.query;
+    let query = `
+        SELECT ut.*, t.title, t.price, t.category, t.description 
         FROM user_tasks ut 
         JOIN tasks t ON ut.task_id = t.id 
-        WHERE ut.user_id = ? 
-        ORDER BY ut.submitted_at DESC
+        WHERE ut.user_id = ?
     `;
+    let params = [req.user.telegramId];
 
-    db.all(query, [req.user.telegramId], (err, tasks) => {
+    if (status) {
+        query += " AND ut.status = ?";
+        params.push(status);
+    }
+
+    query += " ORDER BY ut.submitted_at DESC";
+
+    db.all(query, params, (err, tasks) => {
         if (err) {
             return res.status(500).json({ success: false, error: 'Ошибка БД' });
         }
         res.json({ success: true, tasks: tasks || [] });
+    });
+});
+
+// Получение заданий на проверку (для админов)
+app.get('/api/admin/tasks', authenticateToken, (req, res) => {
+    // Проверяем, является ли пользователь администратором
+    db.get("SELECT is_admin FROM users WHERE telegram_id = ?", [req.user.telegramId], (err, user) => {
+        if (err || !user || user.is_admin !== 1) {
+            return res.status(403).json({ success: false, error: 'Доступ запрещен' });
+        }
+
+        const query = `
+            SELECT ut.*, t.title, t.price, t.category, u.username, u.telegram_id
+            FROM user_tasks ut 
+            JOIN tasks t ON ut.task_id = t.id 
+            JOIN users u ON ut.user_id = u.telegram_id
+            WHERE ut.status = 'completed'
+            ORDER BY ut.submitted_at DESC
+        `;
+
+        db.all(query, [], (err, tasks) => {
+            if (err) {
+                return res.status(500).json({ success: false, error: 'Ошибка БД' });
+            }
+            res.json({ success: true, tasks: tasks || [] });
+        });
+    });
+});
+
+// Одобрение задания (для админов)
+app.post('/api/admin/tasks/approve', authenticateToken, (req, res) => {
+    const { taskId } = req.body;
+
+    // Проверяем, является ли пользователь администратором
+    db.get("SELECT is_admin FROM users WHERE telegram_id = ?", [req.user.telegramId], (err, user) => {
+        if (err || !user || user.is_admin !== 1) {
+            return res.status(403).json({ success: false, error: 'Доступ запрещен' });
+        }
+
+        db.run("UPDATE user_tasks SET status = 'approved' WHERE id = ?", [taskId], function(err) {
+            if (err) {
+                return res.status(500).json({ success: false, error: 'Ошибка одобрения задания' });
+            }
+            res.json({ success: true, message: 'Задание одобрено' });
+        });
+    });
+});
+
+// Отклонение задания (для админов)
+app.post('/api/admin/tasks/reject', authenticateToken, (req, res) => {
+    const { taskId } = req.body;
+
+    // Проверяем, является ли пользователь администратором
+    db.get("SELECT is_admin FROM users WHERE telegram_id = ?", [req.user.telegramId], (err, user) => {
+        if (err || !user || user.is_admin !== 1) {
+            return res.status(403).json({ success: false, error: 'Доступ запрещен' });
+        }
+
+        db.run("UPDATE user_tasks SET status = 'rejected' WHERE id = ?", [taskId], function(err) {
+            if (err) {
+                return res.status(500).json({ success: false, error: 'Ошибка отклонения задания' });
+            }
+            res.json({ success: true, message: 'Задание отклонено' });
+        });
     });
 });
 
