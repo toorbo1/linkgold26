@@ -43,3 +43,8 @@ node_modules/
 .DS_Store
 dist/
 build/
+
+node_modules/
+.env
+*.db
+*.log

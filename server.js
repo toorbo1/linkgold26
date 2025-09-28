@@ -7,15 +7,11 @@ const jwt = require('jsonwebtoken');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Конфигурация
 const JWT_SECRET = process.env.JWT_SECRET || 'linkgold-secret-key-2024';
 const NODE_ENV = process.env.NODE_ENV || 'development';
 
 console.log('🔧 Запуск сервера LinkGold...');
-console.log('🌍 Режим:', NODE_ENV);
-console.log('🚪 Порт:', PORT);
 
-// База данных
 const dbPath = process.env.NODE_ENV === 'production' 
     ? '/tmp/linkgold.db' 
     : path.join(__dirname, 'linkgold.db');
@@ -28,10 +24,8 @@ const db = new sqlite3.Database(dbPath, (err) => {
     }
 });
 
-// Инициализация БД
 function initializeDatabase() {
     db.serialize(() => {
-        // Пользователи
         db.run(`CREATE TABLE IF NOT EXISTS users (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             telegram_id TEXT UNIQUE,
@@ -49,7 +43,6 @@ function initializeDatabase() {
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP
         )`);
 
-        // Задания
         db.run(`CREATE TABLE IF NOT EXISTS tasks (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             title TEXT NOT NULL,
@@ -64,7 +57,6 @@ function initializeDatabase() {
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP
         )`);
 
-        // Выполненные задания
         db.run(`CREATE TABLE IF NOT EXISTS user_tasks (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             user_id TEXT,
@@ -75,16 +67,6 @@ function initializeDatabase() {
             comment TEXT
         )`);
 
-        // Сообщения чата
-        db.run(`CREATE TABLE IF NOT EXISTS chats (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            user_id TEXT,
-            message TEXT,
-            is_admin BOOLEAN DEFAULT 0,
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-        )`);
-
-        // Рефералы
         db.run(`CREATE TABLE IF NOT EXISTS referrals (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             referrer_id TEXT,
@@ -93,25 +75,21 @@ function initializeDatabase() {
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP
         )`);
 
-        // Главный админ
         db.get("SELECT * FROM users WHERE telegram_id = '8036875641'", (err, row) => {
             if (!row) {
-                const referralCode = generateReferralCode();
+                const referralCode = 'GOLD' + Math.random().toString(36).substr(2, 8).toUpperCase();
                 db.run("INSERT INTO users (telegram_id, username, first_name, is_admin, referral_code) VALUES ('8036875641', 'LinkGoldAdmin', 'Администратор', 1, ?)", 
                     [referralCode]);
                 console.log('✅ Главный администратор создан');
             }
         });
 
-        // Демо-задания
         db.get("SELECT COUNT(*) as count FROM tasks", (err, row) => {
             if (row.count === 0) {
                 const tasks = [
                     ['Подписка на Telegram канал', 'subscribe', 15, 'Подпишитесь на канал и оставайтесь подписанным 3 дня', '5 мин', 'https://t.me/linkgold_channel', '8036875641'],
                     ['Просмотр YouTube видео', 'view', 10, 'Посмотрите видео до конца и поставьте лайк', '10 мин', 'https://youtube.com', '8036875641'],
-                    ['Комментарий в группе', 'comment', 20, 'Оставьте содержательный комментарий', '7 мин', 'https://t.me/test_group', '8036875641'],
-                    ['Лайк поста в Instagram', 'social', 12, 'Поставьте лайк на последний пост', '3 мин', 'https://instagram.com', '8036875641'],
-                    ['Репост в Telegram', 'repost', 25, 'Сделайте репост сообщения в ваш канал', '8 мин', 'https://t.me/linkgold_news', '8036875641']
+                    ['Комментарий в группе', 'comment', 20, 'Оставьте содержательный комментарий', '7 мин', 'https://t.me/test_group', '8036875641']
                 ];
                 
                 const stmt = db.prepare("INSERT INTO tasks (title, category, price, description, time, link, admin_id) VALUES (?, ?, ?, ?, ?, ?, ?)");
@@ -123,23 +101,15 @@ function initializeDatabase() {
     });
 }
 
-// Генерация реферального кода
-function generateReferralCode() {
-    return 'GOLD' + Math.random().toString(36).substr(2, 8).toUpperCase();
-}
-
-// Middleware
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Логирование
 app.use((req, res, next) => {
     console.log(`${new Date().toISOString()} ${req.method} ${req.path}`);
     next();
 });
 
-// Проверка JWT токена
 const authenticateToken = (req, res, next) => {
     const authHeader = req.headers['authorization'];
     const token = authHeader && authHeader.split(' ')[1];
@@ -159,7 +129,6 @@ const authenticateToken = (req, res, next) => {
 
 // ==================== API ENDPOINTS ====================
 
-// Health check
 app.get('/api/health', (req, res) => {
     res.json({ 
         success: true, 
@@ -168,7 +137,7 @@ app.get('/api/health', (req, res) => {
     });
 });
 
-// Аутентификация через Telegram
+// Аутентификация через Telegram - ВАЖНО: берем реальные данные из Telegram
 app.post('/api/auth/telegram', (req, res) => {
     const { telegramId, username, firstName, lastName, referralCode } = req.body;
 
@@ -185,7 +154,7 @@ app.post('/api/auth/telegram', (req, res) => {
         }
 
         if (user) {
-            // Существующий пользователь - обновляем данные
+            // Обновляем данные существующего пользователя
             db.run("UPDATE users SET username = ?, first_name = ?, last_name = ? WHERE telegram_id = ?",
                 [username || user.username, firstName || user.first_name, lastName || user.last_name, telegramId],
                 function(err) {
@@ -193,7 +162,6 @@ app.post('/api/auth/telegram', (req, res) => {
                         console.error('Ошибка обновления пользователя:', err);
                     }
                     
-                    // Получаем обновленные данные пользователя
                     db.get(`SELECT u.*, 
                            (SELECT COUNT(*) FROM referrals WHERE referrer_id = u.telegram_id) as referral_count,
                            (SELECT COALESCE(SUM(earned_amount), 0) FROM referrals WHERE referrer_id = u.telegram_id) as referral_earned
@@ -230,25 +198,22 @@ app.post('/api/auth/telegram', (req, res) => {
                 }
             );
         } else {
-            // Новый пользователь
-            const newReferralCode = generateReferralCode();
+            // Создаем нового пользователя
+            const newReferralCode = 'GOLD' + Math.random().toString(36).substr(2, 8).toUpperCase();
             let referredBy = null;
 
-            // Проверяем реферальный код
-            const processReferral = (callback) => {
-                if (referralCode) {
-                    db.get("SELECT telegram_id FROM users WHERE referral_code = ?", [referralCode], (err, referrer) => {
-                        if (referrer && referrer.telegram_id !== telegramId) {
-                            referredBy = referrer.telegram_id;
-                        }
-                        callback();
-                    });
-                } else {
-                    callback();
-                }
-            };
+            if (referralCode) {
+                db.get("SELECT telegram_id FROM users WHERE referral_code = ?", [referralCode], (err, referrer) => {
+                    if (referrer && referrer.telegram_id !== telegramId) {
+                        referredBy = referrer.telegram_id;
+                    }
+                    createNewUser();
+                });
+            } else {
+                createNewUser();
+            }
 
-            processReferral(() => {
+            function createNewUser() {
                 db.run("INSERT INTO users (telegram_id, username, first_name, last_name, referral_code, referred_by) VALUES (?, ?, ?, ?, ?, ?)",
                     [telegramId, username || `user_${telegramId}`, firstName || 'User', lastName || '', newReferralCode, referredBy],
                     function(err) {
@@ -256,7 +221,6 @@ app.post('/api/auth/telegram', (req, res) => {
                             return res.status(500).json({ success: false, error: 'Ошибка создания пользователя' });
                         }
 
-                        // Начисляем бонус рефереру
                         if (referredBy) {
                             db.run("INSERT INTO referrals (referrer_id, referred_id, earned_amount) VALUES (?, ?, ?)", 
                                 [referredBy, telegramId, 50]);
@@ -293,32 +257,12 @@ app.post('/api/auth/telegram', (req, res) => {
                         });
                     }
                 );
-            });
+            }
         }
     });
 });
 
-// Получение реферальной статистики
-app.get('/api/user/referrals', authenticateToken, (req, res) => {
-    const query = `
-        SELECT COUNT(*) as invited, COALESCE(SUM(earned_amount), 0) as earned 
-        FROM referrals 
-        WHERE referrer_id = ?
-    `;
-
-    db.get(query, [req.user.telegramId], (err, result) => {
-        if (err) {
-            return res.status(500).json({ success: false, error: 'Ошибка БД' });
-        }
-        res.json({
-            success: true,
-            invited: result.invited,
-            earned: result.earned
-        });
-    });
-});
-
-// Получение заданий
+// Получение заданий - ВАЖНО: все пользователи видят одни и те же задания
 app.get('/api/tasks', authenticateToken, (req, res) => {
     const { search, category } = req.query;
     let query = "SELECT * FROM tasks WHERE status = 'active'";
@@ -344,7 +288,7 @@ app.get('/api/tasks', authenticateToken, (req, res) => {
     });
 });
 
-// Добавление задания (админ)
+// ДОБАВЛЕНИЕ ЗАДАНИЯ - ВАЖНО: только для админа
 app.post('/api/tasks', authenticateToken, (req, res) => {
     const { title, category, price, description, time, link } = req.body;
 
@@ -366,11 +310,9 @@ app.post('/api/tasks', authenticateToken, (req, res) => {
     });
 });
 
-// Запуск задания
 app.post('/api/tasks/start', authenticateToken, (req, res) => {
     const { taskId } = req.body;
 
-    // Проверяем, не начал ли пользователь уже это задание
     db.get("SELECT * FROM user_tasks WHERE user_id = ? AND task_id = ?", [req.user.telegramId, taskId], (err, existingTask) => {
         if (err) {
             return res.status(500).json({ success: false, error: 'Ошибка БД' });
@@ -396,40 +338,6 @@ app.post('/api/tasks/start', authenticateToken, (req, res) => {
     });
 });
 
-// Подтверждение выполнения задания
-app.post('/api/tasks/complete', authenticateToken, (req, res) => {
-    const { taskId, photoUrl, comment } = req.body;
-
-    db.run("UPDATE user_tasks SET status = 'completed', photo_url = ?, comment = ? WHERE user_id = ? AND task_id = ?",
-        [photoUrl, comment, req.user.telegramId, taskId],
-        function(err) {
-            if (err) {
-                return res.status(500).json({ success: false, error: 'Ошибка подтверждения задания' });
-            }
-
-            // Получаем цену задания
-            db.get("SELECT price FROM tasks WHERE id = ?", [taskId], (err, task) => {
-                if (task) {
-                    // Начисляем деньги пользователю
-                    db.run("UPDATE users SET balance = balance + ?, active_tasks = active_tasks - 1, completed_tasks = completed_tasks + 1, level_progress = level_progress + 1 WHERE telegram_id = ?",
-                        [task.price, req.user.telegramId]);
-
-                    // Проверяем уровень
-                    db.get("SELECT level_progress, level FROM users WHERE telegram_id = ?", [req.user.telegramId], (err, user) => {
-                        if (user.level_progress >= 10) {
-                            db.run("UPDATE users SET level = level + 1, level_progress = 0 WHERE telegram_id = ?",
-                                [req.user.telegramId]);
-                        }
-                    });
-
-                    res.json({ success: true, message: 'Задание отправлено на проверку' });
-                }
-            });
-        }
-    );
-});
-
-// Профиль пользователя
 app.get('/api/user/profile', authenticateToken, (req, res) => {
     db.get(`SELECT u.*, 
                    (SELECT COUNT(*) FROM referrals WHERE referrer_id = u.telegram_id) as referral_count,
@@ -462,7 +370,6 @@ app.get('/api/user/profile', authenticateToken, (req, res) => {
     });
 });
 
-// Получение заданий пользователя
 app.get('/api/user/tasks', authenticateToken, (req, res) => {
     const { status } = req.query;
     let query = `
@@ -488,82 +395,15 @@ app.get('/api/user/tasks', authenticateToken, (req, res) => {
     });
 });
 
-// Получение заданий на проверку (для админов)
-app.get('/api/admin/tasks', authenticateToken, (req, res) => {
-    // Проверяем, является ли пользователь администратором
-    db.get("SELECT is_admin FROM users WHERE telegram_id = ?", [req.user.telegramId], (err, user) => {
-        if (err || !user || user.is_admin !== 1) {
-            return res.status(403).json({ success: false, error: 'Доступ запрещен' });
-        }
-
-        const query = `
-            SELECT ut.*, t.title, t.price, t.category, u.username, u.telegram_id
-            FROM user_tasks ut 
-            JOIN tasks t ON ut.task_id = t.id 
-            JOIN users u ON ut.user_id = u.telegram_id
-            WHERE ut.status = 'completed'
-            ORDER BY ut.submitted_at DESC
-        `;
-
-        db.all(query, [], (err, tasks) => {
-            if (err) {
-                return res.status(500).json({ success: false, error: 'Ошибка БД' });
-            }
-            res.json({ success: true, tasks: tasks || [] });
-        });
-    });
-});
-
-// Одобрение задания (для админов)
-app.post('/api/admin/tasks/approve', authenticateToken, (req, res) => {
-    const { taskId } = req.body;
-
-    // Проверяем, является ли пользователь администратором
-    db.get("SELECT is_admin FROM users WHERE telegram_id = ?", [req.user.telegramId], (err, user) => {
-        if (err || !user || user.is_admin !== 1) {
-            return res.status(403).json({ success: false, error: 'Доступ запрещен' });
-        }
-
-        db.run("UPDATE user_tasks SET status = 'approved' WHERE id = ?", [taskId], function(err) {
-            if (err) {
-                return res.status(500).json({ success: false, error: 'Ошибка одобрения задания' });
-            }
-            res.json({ success: true, message: 'Задание одобрено' });
-        });
-    });
-});
-
-// Отклонение задания (для админов)
-app.post('/api/admin/tasks/reject', authenticateToken, (req, res) => {
-    const { taskId } = req.body;
-
-    // Проверяем, является ли пользователь администратором
-    db.get("SELECT is_admin FROM users WHERE telegram_id = ?", [req.user.telegramId], (err, user) => {
-        if (err || !user || user.is_admin !== 1) {
-            return res.status(403).json({ success: false, error: 'Доступ запрещен' });
-        }
-
-        db.run("UPDATE user_tasks SET status = 'rejected' WHERE id = ?", [taskId], function(err) {
-            if (err) {
-                return res.status(500).json({ success: false, error: 'Ошибка отклонения задания' });
-            }
-            res.json({ success: true, message: 'Задание отклонено' });
-        });
-    });
-});
-
-// SPA роут
 app.get('*', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// Обработка ошибок
 app.use((err, req, res, next) => {
     console.error('❌ Ошибка:', err);
     res.status(500).json({ success: false, error: 'Внутренняя ошибка сервера' });
 });
 
-// Запуск сервера
 initializeDatabase();
 
 app.listen(PORT, '0.0.0.0', () => {
