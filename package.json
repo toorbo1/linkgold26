@@ -1,6 +1,6 @@
 {
   "name": "linkgold-app",
-  "version": "1.0.0",
+  "version": "1.0.0", 
   "description": "LinkGold - Платформа для заработка в Telegram",
   "main": "server.js",
   "scripts": {
