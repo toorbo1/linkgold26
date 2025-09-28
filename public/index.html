@@ -2312,72 +2312,106 @@
         firstName: "Загрузка...", 
         userTg: "Загрузка...",
         userId: null,
-        isAdmin: false
+        balance: 0,
+        completedTasks: 0,
+        activeTasks: 0,
+        quality: 100,
+        level: 1,
+        levelProgress: 0,
+        referrals: {
+            invited: 0,
+            earned: 0
+        },
+        isAdmin: false,
+        isMainAdmin: false,
+        referralCode: "GOLD" + Math.random().toString(36).substr(2, 8).toUpperCase()
     };
 
     let tasksData = [];
+    let userActiveTasks = [];
+    let completedTasks = [];
     let currentTask = null;
+    let currentTaskTab = 'new';
 
     // Инициализация
     document.addEventListener('DOMContentLoaded', function() {
         console.log('🚀 Запуск приложения...');
-        loadTelegramUserData();
+        forceLoadTelegramData();
         loadTasks();
+        setupFilters();
+        setupSearch();
     });
 
-    // ЗАГРУЗКА ДАННЫХ ИЗ TELEGRAM
-    function loadTelegramUserData() {
+    // ПРИНУДИТЕЛЬНАЯ ЗАГРУЗКА ДАННЫХ ИЗ TELEGRAM
+    function forceLoadTelegramData() {
         console.log('🔍 Поиск Telegram WebApp...');
         
         let tg = null;
+        let tgUser = null;
+        
+        // Пробуем разные способы найти Telegram WebApp
         if (window.Telegram && Telegram.WebApp) {
             tg = Telegram.WebApp;
-            console.log('✅ Telegram.WebApp найден');
+            console.log('✅ Найден Telegram.WebApp');
         } else if (window.TelegramWebApp) {
             tg = window.TelegramWebApp;
-            console.log('✅ TelegramWebApp найден');
+            console.log('✅ Найден TelegramWebApp');
         }
-
+        
         if (tg) {
-            console.log('📱 Telegram WebApp:', tg);
-            tg.expand();
+            console.log('📱 Telegram WebApp объект:', tg);
             
-            const tgUser = tg.initDataUnsafe?.user;
-            console.log('👤 Пользователь Telegram:', tgUser);
+            // Пробуем расширить
+            try {
+                tg.expand();
+                console.log('✅ WebApp расширен');
+            } catch (e) {
+                console.log('⚠️ Не удалось расширить WebApp:', e);
+            }
             
-            if (tgUser) {
-                // ОБНОВЛЯЕМ ДАННЫЕ РЕАЛЬНЫМИ ДАННЫМИ ИЗ TELEGRAM
-                userData.username = tgUser.username || 'user';
-                userData.firstName = tgUser.first_name || 'Пользователь';
-                userData.userTg = tgUser.username ? `@${tgUser.username}` : `ID: ${tgUser.id}`;
-                userData.userId = tgUser.id.toString();
-                
-                console.log('📊 Данные пользователя обновлены:', userData);
-
-                // ПРОВЕРЯЕМ АДМИНА
-                if (userData.userId === "8036875641") {
-                    userData.isAdmin = true;
-                    document.getElementById('admin-panel').style.display = 'block';
-                    console.log('⚡ Пользователь - администратор');
-                }
-
-                // Отправляем данные на сервер
-                sendToServer(tgUser);
-                
-                // ОБНОВЛЯЕМ ИНТЕРФЕЙС
-                updateUserInterface();
+            // Ищем данные пользователя
+            if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
+                tgUser = tg.initDataUnsafe.user;
+                console.log('✅ Данные пользователя найдены:', tgUser);
+            } else if (tg.initData) {
+                console.log('ℹ️ initData есть, но нет user данных');
             } else {
-                console.log('❌ Данные пользователя не найдены');
-                userData.username = "Не найден";
-                userData.userTg = "Нет данных";
-                updateUserInterface();
+                console.log('❌ Нет initData');
             }
         } else {
             console.log('❌ Telegram WebApp не найден');
+        }
+        
+        // ОБНОВЛЯЕМ ДАННЫЕ ПОЛЬЗОВАТЕЛЯ
+        if (tgUser) {
+            // РЕАЛЬНЫЕ ДАННЫЕ ИЗ TELEGRAM
+            userData.username = tgUser.username || 'user';
+            userData.firstName = tgUser.first_name || 'Пользователь';
+            userData.userTg = tgUser.username ? `@${tgUser.username}` : `ID: ${tgUser.id}`;
+            userData.userId = tgUser.id.toString();
+            
+            console.log('📊 Обновлены данные пользователя:', userData);
+            
+            // ПРОВЕРЯЕМ АДМИНА
+            if (userData.userId === "8036875641") {
+                userData.isAdmin = true;
+                userData.isMainAdmin = true;
+                document.getElementById('admin-panel').style.display = 'block';
+                document.getElementById('admin-management-btn').style.display = 'none';
+                console.log('⚡ Пользователь - администратор');
+            }
+            
+            // Отправляем данные на сервер
+            sendToServer(tgUser);
+        } else {
+            // Если данных нет, показываем сообщение
             userData.username = "Не в Telegram";
             userData.userTg = "Откройте в боте";
-            updateUserInterface();
+            console.log('⚠️ Данные пользователя не найдены');
         }
+        
+        // ОБНОВЛЯЕМ ИНТЕРФЕЙС
+        updateUserInterface();
     }
 
     // Отправка данных на сервер
@@ -2404,13 +2438,39 @@
         }
     }
 
-    // ОБНОВЛЕНИЕ ИНТЕРФЕЙСА РЕАЛЬНЫМИ ДАННЫМИ
+    // ОБНОВЛЕНИЕ ИНТЕРФЕЙСА
     function updateUserInterface() {
         console.log('🎨 Обновление интерфейса...');
         
-        // РЕАЛЬНЫЕ ДАННЫЕ ИЗ TELEGRAM
-        document.getElementById('username').textContent = userData.username;
+        // РЕАЛЬНЫЕ ДАННЫЕ
+        const displayName = userData.username ? `@${userData.username}` : `${userData.firstName}`;
+        document.getElementById('username').textContent = displayName;
         document.getElementById('user-tg').textContent = userData.userTg;
+        
+        // Остальное обновление...
+        document.getElementById('user-balance-main').textContent = Math.floor(userData.balance) + ' ₽';
+        if (document.querySelector('.balance-amount')) {
+            document.querySelector('.balance-amount').textContent = Math.floor(userData.balance) + ' ₽';
+        }
+        
+        document.getElementById('ref-invited').textContent = userData.referrals.invited;
+        document.getElementById('ref-earned').textContent = Math.floor(userData.referrals.earned) + ' ₽';
+        document.getElementById('referral-code').textContent = userData.referralCode;
+        document.getElementById('modal-referral-code').textContent = userData.referralCode;
+        
+        const progressPercent = (userData.levelProgress / 10) * 100;
+        document.getElementById('level-progress-bar').style.width = progressPercent + '%';
+        document.querySelector('.level-count').textContent = userData.levelProgress + '/10 заданий';
+        document.querySelector('.profile-level').textContent = 'Уровень ' + userData.level;
+        document.querySelector('.level-info').textContent = `Выполните ${10 - userData.levelProgress} заданий для достижения ${userData.level + 1} уровня`;
+        
+        const statElements = document.querySelectorAll('.profile-stat');
+        if (statElements.length >= 4) {
+            statElements[0].querySelector('.stat-value').textContent = Math.floor(userData.balance) + ' ₽';
+            statElements[1].querySelector('.stat-value').textContent = userData.completedTasks;
+            statElements[2].querySelector('.stat-value').textContent = userData.activeTasks;
+            statElements[3].querySelector('.stat-value').textContent = userData.quality + '%';
+        }
         
         console.log('✅ Интерфейс обновлен');
     }
@@ -2422,7 +2482,7 @@
             const data = await response.json();
             if (data.success) {
                 tasksData = data.tasks || [];
-                renderTasks();
+                renderNewTasks();
             }
         } catch (error) {
             console.error('Ошибка загрузки заданий:', error);
@@ -2433,11 +2493,12 @@
     async function addTask() {
         const title = document.getElementById('task-title').value;
         const category = document.getElementById('task-category').value;
-        const price = document.getElementById('task-price').value;
-        const description = document.getElementById('task-description').value;
+        const price = parseInt(document.getElementById('task-price').value);
+        const time = document.getElementById('task-time').value;
         const link = document.getElementById('task-link').value;
+        const description = document.getElementById('task-description').value;
         
-        if (title && category && price && description && link) {
+        if (title && category && price && time && link && description) {
             try {
                 const response = await fetch('/api/tasks', {
                     method: 'POST',
@@ -2449,6 +2510,7 @@
                         category,
                         price,
                         description,
+                        time,
                         link
                     })
                 });
@@ -2456,72 +2518,229 @@
                 const data = await response.json();
                 
                 if (data.success) {
-                    // Очистить форму
                     document.getElementById('task-title').value = '';
                     document.getElementById('task-price').value = '';
+                    document.getElementById('task-time').value = '';
                     document.getElementById('task-link').value = '';
                     document.getElementById('task-description').value = '';
                     
-                    // Перезагрузить задания
                     loadTasks();
-                    
-                    alert('✅ Задание добавлено!');
+                    alert('Задание успешно добавлено!');
                 } else {
-                    alert('❌ Ошибка: ' + data.error);
+                    alert('Ошибка при добавлении задания: ' + data.error);
                 }
             } catch (error) {
-                alert('❌ Ошибка соединения');
+                alert('Ошибка при добавлении задания');
             }
         } else {
-            alert('❌ Заполните все поля!');
+            alert('Заполните все поля!');
         }
     }
 
-    // Рендер заданий
-    function renderTasks() {
-        const container = document.getElementById('new-tasks');
-        container.innerHTML = '';
-        
-        tasksData.forEach(task => {
-            const taskElement = document.createElement('div');
-            taskElement.className = 'task-card';
-            taskElement.innerHTML = `
-                <div class="task-header">
-                    <div class="task-title">${task.title}</div>
-                    <div class="task-price">${task.price} ₽</div>
-                </div>
-                <div class="task-description">${task.description}</div>
-                <button class="task-btn" onclick="startTask(${task.id})">Выполнить</button>
-            `;
-            container.appendChild(taskElement);
-        });
-    }
-
-    // Функции админ-панели
+    // Функции для админ-панели
     function showAddTaskForm() {
         document.getElementById('add-task-form').style.display = 'block';
+        document.getElementById('check-tasks').style.display = 'none';
+        document.getElementById('admin-management').style.display = 'none';
     }
 
-    // Остальные функции...
+    function showCheckTasks() {
+        document.getElementById('add-task-form').style.display = 'none';
+        document.getElementById('check-tasks').style.display = 'block';
+        document.getElementById('admin-management').style.display = 'none';
+    }
+
+    function showAdminManagement() {
+        document.getElementById('add-task-form').style.display = 'none';
+        document.getElementById('check-tasks').style.display = 'none';
+        document.getElementById('admin-management').style.display = 'block';
+    }
+
+    // Остальные функции (без изменений)
     function showMainTab() {
+        hideAllTabs();
         document.getElementById('main-tab').classList.add('active');
-        document.getElementById('tasks-tab').classList.remove('active');
-        document.getElementById('profile-tab').classList.remove('active');
+        updateNavActiveState('Главная');
     }
     
     function showTasksTab() {
-        document.getElementById('main-tab').classList.remove('active');
+        hideAllTabs();
         document.getElementById('tasks-tab').classList.add('active');
-        document.getElementById('profile-tab').classList.remove('active');
+        updateNavActiveState('Задания');
+        showTaskTab(currentTaskTab);
     }
     
     function showProfileTab() {
+        hideAllTabs();
+        document.getElementById('profile-tab').classList.add('active');
+        updateNavActiveState('Профиль');
+    }
+    
+    function hideAllTabs() {
         document.getElementById('main-tab').classList.remove('active');
         document.getElementById('tasks-tab').classList.remove('active');
-        document.getElementById('profile-tab').classList.add('active');
+        document.getElementById('profile-tab').classList.remove('active');
+    }
+    
+    function showTaskTab(tab) {
+        currentTaskTab = tab;
+        
+        document.getElementById('new-tasks').style.display = 'none';
+        document.getElementById('confirmation-tasks').style.display = 'none';
+        document.getElementById('completed-tasks').style.display = 'none';
+        
+        if (tab === 'new') {
+            document.getElementById('new-tasks').style.display = 'grid';
+            renderNewTasks();
+        } else if (tab === 'confirmation') {
+            document.getElementById('confirmation-tasks').style.display = 'block';
+            renderConfirmationTasks();
+        } else if (tab === 'completed') {
+            document.getElementById('completed-tasks').style.display = 'grid';
+            renderCompletedTasks();
+        }
+        
+        const tabElements = document.querySelectorAll('.task-tab');
+        tabElements.forEach(tabEl => tabEl.classList.remove('active'));
+        const activeIndex = tab === 'new' ? 1 : tab === 'confirmation' ? 2 : 3;
+        if (tabElements[activeIndex - 1]) {
+            tabElements[activeIndex - 1].classList.add('active');
+        }
+    }
+    
+    function updateNavActiveState(activeLabel) {
+        document.querySelectorAll('.nav-item').forEach(item => {
+            if (item.querySelector('.nav-label').textContent === activeLabel) {
+                item.classList.add('active');
+            } else {
+                item.classList.remove('active');
+            }
+        });
     }
 
-    // Показываем главную вкладку
+    function renderNewTasks(filter = 'all', searchQuery = '') {
+        const tasksContainer = document.getElementById('new-tasks');
+        if (!tasksContainer) return;
+        
+        tasksContainer.innerHTML = '';
+        
+        let filteredTasks = tasksData.filter(task => task.status === 'active');
+        
+        if (filter !== 'all') {
+            filteredTasks = filteredTasks.filter(task => task.category === filter);
+        }
+        
+        if (searchQuery) {
+            const query = searchQuery.toLowerCase();
+            filteredTasks = filteredTasks.filter(task => 
+                task.title.toLowerCase().includes(query) || 
+                task.description.toLowerCase().includes(query)
+            );
+        }
+        
+        if (filteredTasks.length === 0) {
+            tasksContainer.innerHTML = `
+                <div class="no-tasks">
+                    <div class="no-tasks-icon">🔍</div>
+                    <div>Задания не найдены</div>
+                </div>
+            `;
+            return;
+        }
+        
+        filteredTasks.forEach(task => {
+            const taskElement = document.createElement('div');
+            taskElement.className = 'task-card fade-in';
+            taskElement.innerHTML = `
+                <div class="task-header">
+                    <div>
+                        <div class="task-title">${task.title}</div>
+                        <span class="task-category">${getCategoryName(task.category)}</span>
+                    </div>
+                    <div class="task-price">${task.price} ₽</div>
+                </div>
+                <div class="task-description">${task.description}</div>
+                <div class="task-footer">
+                    <div class="task-time">${task.time}</div>
+                    <button class="task-btn" onclick="showTaskModal(${task.id})">Выполнить</button>
+                </div>
+            `;
+            tasksContainer.appendChild(taskElement);
+        });
+    }
+
+    function showTaskModal(taskId) {
+        const task = tasksData.find(t => t.id === taskId);
+        if (task) {
+            currentTask = task;
+            
+            document.getElementById('task-modal-title').textContent = task.title;
+            document.getElementById('task-modal-category').textContent = getCategoryName(task.category);
+            document.getElementById('task-modal-price').textContent = task.price + ' ₽';
+            document.getElementById('task-modal-description').textContent = task.description;
+            document.getElementById('task-modal-time').textContent = task.time;
+            document.getElementById('task-modal-status').textContent = 'Доступно';
+            document.getElementById('task-modal-available').textContent = task.available + ' заданий';
+            
+            document.getElementById('task-modal').classList.add('active');
+        }
+    }
+
+    function startTask() {
+        if (currentTask) {
+            userActiveTasks.push({
+                task_id: currentTask.id,
+                title: currentTask.title,
+                price: currentTask.price
+            });
+            
+            userData.activeTasks++;
+            updateUserInterface();
+            closeModal('task-modal');
+            
+            alert('Задание начато! После выполнения вернитесь в приложение для подтверждения.');
+        }
+    }
+
+    function setupFilters() {
+        const filterButtons = document.querySelectorAll('.filter-btn');
+        
+        filterButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                filterButtons.forEach(btn => btn.classList.remove('active'));
+                button.classList.add('active');
+                
+                const filter = button.getAttribute('data-filter');
+                const searchQuery = document.getElementById('task-search').value;
+                renderNewTasks(filter, searchQuery);
+            });
+        });
+    }
+
+    function setupSearch() {
+        const searchInput = document.getElementById('task-search');
+        if (searchInput) {
+            searchInput.addEventListener('input', () => {
+                const searchQuery = searchInput.value;
+                const activeFilter = document.querySelector('.filter-btn.active');
+                const filter = activeFilter ? activeFilter.getAttribute('data-filter') : 'all';
+                renderNewTasks(filter, searchQuery);
+            });
+        }
+    }
+
+    function getCategoryName(category) {
+        const categories = {
+            'social': 'Соцсети',
+            'subscribe': 'Подписки',
+            'view': 'Просмотры',
+            'comment': 'Комментарии',
+            'repost': 'Репосты'
+        };
+        return categories[category] || category;
+    }
+
+    // Остальные функции...
     showMainTab();
 </script>
 </body>
