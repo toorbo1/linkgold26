@@ -3,21 +3,13 @@ const cors = require('cors');
 const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
 const jwt = require('jsonwebtoken');
-const crypto = require('crypto');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// В начале server.js
-const JWT_SECRET = process.env.JWT_SECRET || 'fallback-secret-for-development-only';
-const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || 'fallback-bot-token';
-const MAIN_ADMIN_ID = process.env.MAIN_ADMIN_ID || '8036875641';
+// Конфигурация
+const JWT_SECRET = process.env.JWT_SECRET || 'linkgold-secret-key-2024';
 const NODE_ENV = process.env.NODE_ENV || 'development';
-
-// Добавьте предупреждение в разработке
-if (NODE_ENV === 'development' && (!process.env.JWT_SECRET || !process.env.TELEGRAM_BOT_TOKEN)) {
-    console.warn('⚠️  Используются значения по умолчанию. Создайте .env файл для production!');
-}
 
 console.log('🔧 Запуск сервера LinkGold...');
 console.log('🌍 Режим:', NODE_ENV);
@@ -45,12 +37,15 @@ function initializeDatabase() {
             telegram_id TEXT UNIQUE,
             username TEXT,
             first_name TEXT,
+            last_name TEXT,
             balance REAL DEFAULT 0,
             completed_tasks INTEGER DEFAULT 0,
             active_tasks INTEGER DEFAULT 0,
             level INTEGER DEFAULT 1,
             level_progress INTEGER DEFAULT 0,
             is_admin BOOLEAN DEFAULT 0,
+            referral_code TEXT UNIQUE,
+            referred_by TEXT,
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP
         )`);
 
@@ -77,10 +72,7 @@ function initializeDatabase() {
             status TEXT DEFAULT 'pending',
             submitted_at DATETIME DEFAULT CURRENT_TIMESTAMP,
             photo_url TEXT,
-            comment TEXT,
-            admin_reviewed BOOLEAN DEFAULT 0,
-            reviewed_by TEXT,
-            reviewed_at DATETIME
+            comment TEXT
         )`);
 
         // Сообщения чата
@@ -89,16 +81,24 @@ function initializeDatabase() {
             user_id TEXT,
             message TEXT,
             is_admin BOOLEAN DEFAULT 0,
-            admin_id TEXT,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        )`);
+
+        // Рефералы
+        db.run(`CREATE TABLE IF NOT EXISTS referrals (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            referrer_id TEXT,
+            referred_id TEXT,
+            earned_amount REAL DEFAULT 0,
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP
         )`);
 
         // Главный админ
-        db.get("SELECT * FROM users WHERE telegram_id = ?", [MAIN_ADMIN_ID], (err, row) => {
+        db.get("SELECT * FROM users WHERE telegram_id = '8036875641'", (err, row) => {
             if (!row) {
-                db.run("INSERT INTO users (telegram_id, username, first_name, is_admin) VALUES (?, '@LinkGoldAdmin', 'Администратор', 1)", 
-                    [MAIN_ADMIN_ID]);
-                console.log('✅ Главный админ создан');
+                const referralCode = generateReferralCode();
+                db.run("INSERT INTO users (telegram_id, username, first_name, is_admin, referral_code) VALUES ('8036875641', 'LinkGoldAdmin', 'Администратор', 1, ?)", 
+                    [referralCode]);
             }
         });
 
@@ -106,9 +106,9 @@ function initializeDatabase() {
         db.get("SELECT COUNT(*) as count FROM tasks", (err, row) => {
             if (row.count === 0) {
                 const tasks = [
-                    ['Подписка на Telegram канал', 'subscribe', 15, 'Подпишитесь на канал и оставайтесь подписанным 3 дня', '5 мин', 'https://t.me/linkgold_channel', MAIN_ADMIN_ID],
-                    ['Просмотр YouTube видео', 'view', 10, 'Посмотрите видео до конца и поставьте лайк', '10 мин', 'https://youtube.com', MAIN_ADMIN_ID],
-                    ['Комментарий в группе', 'comment', 20, 'Оставьте содержательный комментарий', '7 мин', 'https://t.me/test_group', MAIN_ADMIN_ID]
+                    ['Подписка на Telegram канал', 'subscribe', 15, 'Подпишитесь на канал и оставайтесь подписанным 3 дня', '5 мин', 'https://t.me/linkgold_channel', '8036875641'],
+                    ['Просмотр YouTube видео', 'view', 10, 'Посмотрите видео до конца и поставьте лайк', '10 мин', 'https://youtube.com', '8036875641'],
+                    ['Комментарий в группе', 'comment', 20, 'Оставьте содержательный комментарий', '7 мин', 'https://t.me/test_group', '8036875641']
                 ];
                 
                 const stmt = db.prepare("INSERT INTO tasks (title, category, price, description, time, link, admin_id) VALUES (?, ?, ?, ?, ?, ?, ?)");
@@ -120,110 +120,15 @@ function initializeDatabase() {
     });
 }
 
+// Генерация реферального кода
+function generateReferralCode() {
+    return 'GOLD' + Math.random().toString(36).substr(2, 8).toUpperCase();
+}
+
 // Middleware
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
-
-// Валидация данных Telegram Web App
-function validateTelegramData(telegramData) {
-    if (!telegramData.hash || NODE_ENV === 'development') {
-        return true; // Пропускаем проверку в разработке
-    }
-
-    const dataToCheck = { ...telegramData };
-    delete dataToCheck.hash;
-
-    const sortedKeys = Object.keys(dataToCheck).sort();
-    const dataCheckString = sortedKeys
-        .map(key => `${key}=${dataToCheck[key]}`)
-        .join('\n');
-
-    const secretKey = crypto.createHmac('sha256', 'WebAppData')
-        .update(TELEGRAM_BOT_TOKEN)
-        .digest();
-
-    const calculatedHash = crypto.createHmac('sha256', secretKey)
-        .update(dataCheckString)
-        .digest('hex');
-
-    return calculatedHash === telegramData.hash;
-}
-
-// Парсинг данных из Telegram initData
-function parseTelegramInitData(initData) {
-    try {
-        const params = new URLSearchParams(initData);
-        const result = {};
-        
-        for (const [key, value] of params) {
-            result[key] = value;
-        }
-        
-        // Парсим user object если он есть
-        if (result.user) {
-            try {
-                result.user = JSON.parse(result.user);
-            } catch (e) {
-                console.log('❌ Ошибка парсинга user object');
-            }
-        }
-        
-        return result;
-    } catch (error) {
-        console.error('❌ Ошибка парсинга initData:', error);
-        return {};
-    }
-}
-
-// Middleware для проверки Telegram Web App
-const checkTelegramOrigin = (req, res, next) => {
-    const telegramInitData = req.headers['telegram-init-data'] || req.query.tgWebAppData;
-    
-    if (!telegramInitData) {
-        if (NODE_ENV === 'development') {
-            console.log('⚠️ Режим разработки: пропускаем проверку Telegram');
-            req.telegramUser = {
-                id: '123456789',
-                username: 'test_user',
-                first_name: 'Test',
-                last_name: 'User'
-            };
-            return next();
-        }
-        return res.status(403).json({ 
-            success: false, 
-            error: 'Доступ только через Telegram Web App' 
-        });
-    }
-
-    try {
-        const telegramData = parseTelegramInitData(telegramInitData);
-        
-        if (!validateTelegramData(telegramData)) {
-            return res.status(403).json({ 
-                success: false, 
-                error: 'Невалидные данные Telegram' 
-            });
-        }
-
-        req.telegramUser = {
-            id: telegramData.user?.id || telegramData.id || 'unknown',
-            username: telegramData.user?.username || telegramData.username,
-            first_name: telegramData.user?.first_name || telegramData.first_name,
-            last_name: telegramData.user?.last_name || telegramData.last_name,
-            photo_url: telegramData.user?.photo_url || telegramData.photo_url
-        };
-
-        next();
-    } catch (error) {
-        console.error('❌ Ошибка валидации Telegram:', error);
-        return res.status(403).json({ 
-            success: false, 
-            error: 'Ошибка проверки данных Telegram' 
-        });
-    }
-};
 
 // Логирование
 app.use((req, res, next) => {
@@ -249,22 +154,6 @@ const authenticateToken = (req, res, next) => {
     });
 };
 
-// Проверка прав администратора
-const requireAdmin = (req, res, next) => {
-    if (!req.user.isAdmin) {
-        return res.status(403).json({ success: false, error: 'Требуются права администратора' });
-    }
-    next();
-};
-
-// Проверка прав главного администратора
-const requireMainAdmin = (req, res, next) => {
-    if (!req.user.isAdmin || req.user.telegramId !== MAIN_ADMIN_ID) {
-        return res.status(403).json({ success: false, error: 'Требуются права главного администратора' });
-    }
-    next();
-};
-
 // ==================== API ENDPOINTS ====================
 
 // Health check
@@ -276,79 +165,148 @@ app.get('/api/health', (req, res) => {
     });
 });
 
-// Аутентификация через Telegram Web App
-app.post('/api/auth/telegram', checkTelegramOrigin, (req, res) => {
-    const { telegramUser } = req;
+// Аутентификация через Telegram
+app.post('/api/auth/telegram', (req, res) => {
+    const { telegramId, username, firstName, lastName, referralCode } = req.body;
 
-    if (!telegramUser.id) {
+    if (!telegramId) {
         return res.status(400).json({ success: false, error: 'Telegram ID обязателен' });
     }
 
-    db.get("SELECT * FROM users WHERE telegram_id = ?", [telegramUser.id], (err, user) => {
+    db.get("SELECT * FROM users WHERE telegram_id = ?", [telegramId], (err, user) => {
         if (err) {
-            console.error('❌ Ошибка БД:', err);
             return res.status(500).json({ success: false, error: 'Ошибка БД' });
         }
 
         if (user) {
-            // Существующий пользователь
-            const token = jwt.sign({
-                telegramId: user.telegram_id,
-                username: user.username,
-                isAdmin: user.is_admin === 1
-            }, JWT_SECRET, { expiresIn: '24h' });
-
-            res.json({
-                success: true,
-                token,
-                user: {
-                    telegramId: user.telegram_id,
-                    username: user.username,
-                    firstName: user.first_name,
-                    balance: user.balance,
-                    completedTasks: user.completed_tasks,
-                    activeTasks: user.active_tasks,
-                    level: user.level,
-                    levelProgress: user.level_progress,
-                    isAdmin: user.is_admin === 1,
-                    isMainAdmin: user.telegram_id === MAIN_ADMIN_ID
-                }
-            });
-        } else {
-            // Новый пользователь
-            db.run("INSERT INTO users (telegram_id, username, first_name) VALUES (?, ?, ?)",
-                [telegramUser.id, telegramUser.username || `user_${telegramUser.id}`, telegramUser.first_name || 'User'],
+            // Существующий пользователь - обновляем данные
+            db.run("UPDATE users SET username = ?, first_name = ?, last_name = ? WHERE telegram_id = ?",
+                [username || user.username, firstName || user.first_name, lastName || user.last_name, telegramId],
                 function(err) {
                     if (err) {
-                        console.error('❌ Ошибка создания пользователя:', err);
-                        return res.status(500).json({ success: false, error: 'Ошибка создания пользователя' });
+                        console.error('Ошибка обновления пользователя:', err);
                     }
+                    
+                    // Получаем обновленные данные пользователя с реферальной статистикой
+                    db.get(`SELECT u.*, 
+                           (SELECT COUNT(*) FROM referrals WHERE referrer_id = u.telegram_id) as referral_count,
+                           (SELECT COALESCE(SUM(earned_amount), 0) FROM referrals WHERE referrer_id = u.telegram_id) as referral_earned
+                    FROM users u WHERE u.telegram_id = ?`, [telegramId], (err, updatedUser) => {
+                        const token = jwt.sign({
+                            telegramId: updatedUser.telegram_id,
+                            username: updatedUser.username,
+                            firstName: updatedUser.first_name,
+                            isAdmin: updatedUser.is_admin === 1
+                        }, JWT_SECRET, { expiresIn: '24h' });
 
-                    const token = jwt.sign({
-                        telegramId: telegramUser.id,
-                        username: telegramUser.username || `user_${telegramUser.id}`,
-                        isAdmin: false
-                    }, JWT_SECRET, { expiresIn: '24h' });
-
-                    res.json({
-                        success: true,
-                        token,
-                        user: {
-                            telegramId: telegramUser.id,
-                            username: telegramUser.username || `user_${telegramUser.id}`,
-                            firstName: telegramUser.first_name || 'User',
-                            balance: 0,
-                            completedTasks: 0,
-                            activeTasks: 0,
-                            level: 1,
-                            levelProgress: 0,
-                            isAdmin: false,
-                            isMainAdmin: false
-                        }
+                        res.json({
+                            success: true,
+                            token,
+                            user: {
+                                telegramId: updatedUser.telegram_id,
+                                username: updatedUser.username,
+                                firstName: updatedUser.first_name,
+                                lastName: updatedUser.last_name,
+                                balance: updatedUser.balance,
+                                completedTasks: updatedUser.completed_tasks,
+                                activeTasks: updatedUser.active_tasks,
+                                level: updatedUser.level,
+                                levelProgress: updatedUser.level_progress,
+                                isAdmin: updatedUser.is_admin === 1,
+                                referralCode: updatedUser.referral_code,
+                                referrals: {
+                                    invited: updatedUser.referral_count,
+                                    earned: updatedUser.referral_earned
+                                }
+                            }
+                        });
                     });
                 }
             );
+        } else {
+            // Новый пользователь
+            const newReferralCode = generateReferralCode();
+            let referredBy = null;
+
+            // Проверяем реферальный код
+            if (referralCode) {
+                db.get("SELECT telegram_id FROM users WHERE referral_code = ?", [referralCode], (err, referrer) => {
+                    if (referrer && referrer.telegram_id !== telegramId) {
+                        referredBy = referrer.telegram_id;
+                    }
+                    createNewUser();
+                });
+            } else {
+                createNewUser();
+            }
+
+            function createNewUser() {
+                db.run("INSERT INTO users (telegram_id, username, first_name, last_name, referral_code, referred_by) VALUES (?, ?, ?, ?, ?, ?)",
+                    [telegramId, username || `user_${telegramId}`, firstName || 'User', lastName || '', newReferralCode, referredBy],
+                    function(err) {
+                        if (err) {
+                            return res.status(500).json({ success: false, error: 'Ошибка создания пользователя' });
+                        }
+
+                        // Начисляем бонус рефереру
+                        if (referredBy) {
+                            db.run("INSERT INTO referrals (referrer_id, referred_id, earned_amount) VALUES (?, ?, ?)", 
+                                [referredBy, telegramId, 50]);
+                            db.run("UPDATE users SET balance = balance + 50 WHERE telegram_id = ?", [referredBy]);
+                        }
+
+                        const token = jwt.sign({
+                            telegramId,
+                            username: username || `user_${telegramId}`,
+                            firstName: firstName || 'User',
+                            isAdmin: false
+                        }, JWT_SECRET, { expiresIn: '24h' });
+
+                        res.json({
+                            success: true,
+                            token,
+                            user: {
+                                telegramId,
+                                username: username || `user_${telegramId}`,
+                                firstName: firstName || 'User',
+                                lastName: lastName || '',
+                                balance: 0,
+                                completedTasks: 0,
+                                activeTasks: 0,
+                                level: 1,
+                                levelProgress: 0,
+                                isAdmin: false,
+                                referralCode: newReferralCode,
+                                referrals: {
+                                    invited: 0,
+                                    earned: 0
+                                }
+                            }
+                        });
+                    }
+                );
+            }
         }
+    });
+});
+
+// Получение реферальной статистики
+app.get('/api/user/referrals', authenticateToken, (req, res) => {
+    const query = `
+        SELECT COUNT(*) as invited, COALESCE(SUM(earned_amount), 0) as earned 
+        FROM referrals 
+        WHERE referrer_id = ?
+    `;
+
+    db.get(query, [req.user.telegramId], (err, result) => {
+        if (err) {
+            return res.status(500).json({ success: false, error: 'Ошибка БД' });
+        }
+        res.json({
+            success: true,
+            invited: result.invited,
+            earned: result.earned
+        });
     });
 });
 
@@ -378,63 +336,53 @@ app.get('/api/tasks', authenticateToken, (req, res) => {
     });
 });
 
-// Запуск задания
-app.post('/api/tasks/start', authenticateToken, (req, res) => {
-    const { taskId } = req.body;
+// Добавление задания (админ)
+app.post('/api/tasks', authenticateToken, (req, res) => {
+    const { title, category, price, description, time, link } = req.body;
 
-    // Проверяем, не начал ли пользователь уже это задание
-    db.get("SELECT * FROM user_tasks WHERE user_id = ? AND task_id = ? AND status = 'pending'", 
-        [req.user.telegramId, taskId], (err, existingTask) => {
-        if (err) {
-            return res.status(500).json({ success: false, error: 'Ошибка БД' });
+    // Проверяем, является ли пользователь администратором
+    db.get("SELECT is_admin FROM users WHERE telegram_id = ?", [req.user.telegramId], (err, user) => {
+        if (err || !user || user.is_admin !== 1) {
+            return res.status(403).json({ success: false, error: 'Доступ запрещен' });
         }
 
-        if (existingTask) {
-            return res.status(400).json({ success: false, error: 'Задание уже начато' });
-        }
-
-        db.run("INSERT INTO user_tasks (user_id, task_id) VALUES (?, ?)",
-            [req.user.telegramId, taskId],
+        db.run("INSERT INTO tasks (title, category, price, description, time, link, admin_id) VALUES (?, ?, ?, ?, ?, ?, ?)",
+            [title, category, price, description, time, link, req.user.telegramId],
             function(err) {
                 if (err) {
-                    return res.status(500).json({ success: false, error: 'Ошибка начала задания' });
+                    return res.status(500).json({ success: false, error: 'Ошибка добавления задания' });
                 }
-
-                db.run("UPDATE users SET active_tasks = active_tasks + 1 WHERE telegram_id = ?",
-                    [req.user.telegramId]);
-
-                res.json({ success: true, message: 'Задание начато' });
+                res.json({ success: true, message: 'Задание добавлено', taskId: this.lastID });
             }
         );
     });
 });
 
-// Подтверждение задания
-app.post('/api/tasks/confirm', authenticateToken, (req, res) => {
-    const { taskId, photo, comment } = req.body;
+// Запуск задания
+app.post('/api/tasks/start', authenticateToken, (req, res) => {
+    const { taskId } = req.body;
 
-    db.run("UPDATE user_tasks SET status = 'submitted', photo_url = ?, comment = ? WHERE user_id = ? AND task_id = ? AND status = 'pending'",
-        [photo, comment, req.user.telegramId, taskId],
+    db.run("INSERT INTO user_tasks (user_id, task_id) VALUES (?, ?)",
+        [req.user.telegramId, taskId],
         function(err) {
             if (err) {
-                return res.status(500).json({ success: false, error: 'Ошибка подтверждения задания' });
+                return res.status(500).json({ success: false, error: 'Ошибка начала задания' });
             }
 
-            if (this.changes === 0) {
-                return res.status(400).json({ success: false, error: 'Задание не найдено или уже подтверждено' });
-            }
-
-            db.run("UPDATE users SET active_tasks = active_tasks - 1 WHERE telegram_id = ?",
+            db.run("UPDATE users SET active_tasks = active_tasks + 1 WHERE telegram_id = ?",
                 [req.user.telegramId]);
 
-            res.json({ success: true, message: 'Задание отправлено на проверку' });
+            res.json({ success: true, message: 'Задание начато' });
         }
     );
 });
 
 // Профиль пользователя
 app.get('/api/user/profile', authenticateToken, (req, res) => {
-    db.get("SELECT * FROM users WHERE telegram_id = ?", [req.user.telegramId], (err, user) => {
+    db.get(`SELECT u.*, 
+                   (SELECT COUNT(*) FROM referrals WHERE referrer_id = u.telegram_id) as referral_count,
+                   (SELECT COALESCE(SUM(earned_amount), 0) FROM referrals WHERE referrer_id = u.telegram_id) as referral_earned
+            FROM users u WHERE u.telegram_id = ?`, [req.user.telegramId], (err, user) => {
         if (err || !user) {
             return res.status(404).json({ success: false, error: 'Пользователь не найден' });
         }
@@ -445,13 +393,18 @@ app.get('/api/user/profile', authenticateToken, (req, res) => {
                 telegramId: user.telegram_id,
                 username: user.username,
                 firstName: user.first_name,
+                lastName: user.last_name,
                 balance: user.balance,
                 completedTasks: user.completed_tasks,
                 activeTasks: user.active_tasks,
                 level: user.level,
                 levelProgress: user.level_progress,
                 isAdmin: user.is_admin === 1,
-                isMainAdmin: user.telegram_id === MAIN_ADMIN_ID
+                referralCode: user.referral_code,
+                referrals: {
+                    invited: user.referral_count,
+                    earned: user.referral_earned
+                }
             }
         });
     });
@@ -459,11 +412,7 @@ app.get('/api/user/profile', authenticateToken, (req, res) => {
 
 // Сообщения чата
 app.get('/api/chat/messages', authenticateToken, (req, res) => {
-    db.all(`SELECT c.*, u.username 
-            FROM chats c 
-            LEFT JOIN users u ON c.user_id = u.telegram_id 
-            WHERE c.user_id = ? 
-            ORDER BY c.created_at ASC`,
+    db.all("SELECT * FROM chats WHERE user_id = ? ORDER BY created_at ASC",
         [req.user.telegramId],
         (err, messages) => {
             if (err) {
@@ -495,7 +444,7 @@ app.post('/api/chat/messages', authenticateToken, (req, res) => {
 // Задания пользователя
 app.get('/api/user/tasks', authenticateToken, (req, res) => {
     const query = `
-        SELECT ut.*, t.title, t.price, t.category, t.description, t.time
+        SELECT ut.*, t.title, t.price, t.category 
         FROM user_tasks ut 
         JOIN tasks t ON ut.task_id = t.id 
         WHERE ut.user_id = ? 
@@ -510,174 +459,8 @@ app.get('/api/user/tasks', authenticateToken, (req, res) => {
     });
 });
 
-// ==================== АДМИН ENDPOINTS ====================
-
-// Получение заданий на проверку
-app.get('/api/admin/tasks/review', authenticateToken, requireAdmin, (req, res) => {
-    const query = `
-        SELECT ut.*, t.title, t.price, t.category, u.username, u.telegram_id
-        FROM user_tasks ut 
-        JOIN tasks t ON ut.task_id = t.id 
-        JOIN users u ON ut.user_id = u.telegram_id 
-        WHERE ut.status = 'submitted' 
-        ORDER BY ut.submitted_at ASC
-    `;
-
-    db.all(query, [], (err, tasks) => {
-        if (err) {
-            return res.status(500).json({ success: false, error: 'Ошибка БД' });
-        }
-        res.json({ success: true, tasks: tasks || [] });
-    });
-});
-
-// Одобрение задания
-app.post('/api/admin/tasks/approve', authenticateToken, requireAdmin, (req, res) => {
-    const { taskId } = req.body;
-
-    db.serialize(() => {
-        // Получаем информацию о задании
-        db.get(`SELECT ut.*, t.price, ut.user_id 
-                FROM user_tasks ut 
-                JOIN tasks t ON ut.task_id = t.id 
-                WHERE ut.id = ?`, [taskId], (err, task) => {
-            if (err || !task) {
-                return res.status(404).json({ success: false, error: 'Задание не найдено' });
-            }
-
-            // Обновляем статус задания
-            db.run("UPDATE user_tasks SET status = 'approved', admin_reviewed = 1, reviewed_by = ?, reviewed_at = CURRENT_TIMESTAMP WHERE id = ?",
-                [req.user.telegramId, taskId],
-                function(err) {
-                    if (err) {
-                        return res.status(500).json({ success: false, error: 'Ошибка БД' });
-                    }
-
-                    // Начисляем деньги пользователю
-                    db.run("UPDATE users SET balance = balance + ?, completed_tasks = completed_tasks + 1, level_progress = level_progress + 1 WHERE telegram_id = ?",
-                        [task.price, task.user_id],
-                        function(err) {
-                            if (err) {
-                                return res.status(500).json({ success: false, error: 'Ошибка начисления' });
-                            }
-
-                            // Проверяем уровень
-                            db.get("SELECT level_progress, level FROM users WHERE telegram_id = ?", [task.user_id], (err, user) => {
-                                if (user.level_progress >= 10) {
-                                    db.run("UPDATE users SET level = level + 1, level_progress = 0 WHERE telegram_id = ?", [task.user_id]);
-                                }
-
-                                res.json({ success: true, message: 'Задание одобрено' });
-                            });
-                        }
-                    );
-                }
-            );
-        });
-    });
-});
-
-// Отклонение задания
-app.post('/api/admin/tasks/reject', authenticateToken, requireAdmin, (req, res) => {
-    const { taskId } = req.body;
-
-    db.run("UPDATE user_tasks SET status = 'rejected', admin_reviewed = 1, reviewed_by = ?, reviewed_at = CURRENT_TIMESTAMP WHERE id = ?",
-        [req.user.telegramId, taskId],
-        function(err) {
-            if (err) {
-                return res.status(500).json({ success: false, error: 'Ошибка БД' });
-            }
-
-            res.json({ success: true, message: 'Задание отклонено' });
-        }
-    );
-});
-
-// Создание задания
-app.post('/api/admin/tasks', authenticateToken, requireAdmin, (req, res) => {
-    const { title, category, price, description, time, link } = req.body;
-
-    if (!title || !category || !price || !description || !time || !link) {
-        return res.status(400).json({ success: false, error: 'Все поля обязательны' });
-    }
-
-    db.run("INSERT INTO tasks (title, category, price, description, time, link, admin_id) VALUES (?, ?, ?, ?, ?, ?, ?)",
-        [title, category, price, description, time, link, req.user.telegramId],
-        function(err) {
-            if (err) {
-                return res.status(500).json({ success: false, error: 'Ошибка создания задания' });
-            }
-
-            res.json({ success: true, message: 'Задание создано', taskId: this.lastID });
-        }
-    );
-});
-
-// Удаление задания
-app.delete('/api/admin/tasks/:id', authenticateToken, requireAdmin, (req, res) => {
-    const taskId = req.params.id;
-
-    db.run("DELETE FROM tasks WHERE id = ? AND admin_id = ?", [taskId, req.user.telegramId], function(err) {
-        if (err) {
-            return res.status(500).json({ success: false, error: 'Ошибка удаления задания' });
-        }
-
-        if (this.changes === 0) {
-            return res.status(404).json({ success: false, error: 'Задание не найдено или нет прав' });
-        }
-
-        res.json({ success: true, message: 'Задание удалено' });
-    });
-});
-
-// Управление админами (только для главного админа)
-app.get('/api/admin/admins', authenticateToken, requireMainAdmin, (req, res) => {
-    db.all("SELECT telegram_id, username, first_name, is_admin FROM users WHERE is_admin = 1", [], (err, admins) => {
-        if (err) {
-            return res.status(500).json({ success: false, error: 'Ошибка БД' });
-        }
-        res.json({ success: true, admins: admins || [] });
-    });
-});
-
-app.post('/api/admin/admins', authenticateToken, requireMainAdmin, (req, res) => {
-    const { telegramId } = req.body;
-
-    if (!telegramId) {
-        return res.status(400).json({ success: false, error: 'Telegram ID обязателен' });
-    }
-
-    db.run("UPDATE users SET is_admin = 1 WHERE telegram_id = ?", [telegramId], function(err) {
-        if (err) {
-            return res.status(500).json({ success: false, error: 'Ошибка БД' });
-        }
-
-        if (this.changes === 0) {
-            return res.status(404).json({ success: false, error: 'Пользователь не найден' });
-        }
-
-        res.json({ success: true, message: 'Пользователь назначен администратором' });
-    });
-});
-
-app.delete('/api/admin/admins/:telegramId', authenticateToken, requireMainAdmin, (req, res) => {
-    const telegramId = req.params.telegramId;
-
-    if (telegramId === MAIN_ADMIN_ID) {
-        return res.status(400).json({ success: false, error: 'Нельзя удалить главного администратора' });
-    }
-
-    db.run("UPDATE users SET is_admin = 0 WHERE telegram_id = ?", [telegramId], function(err) {
-        if (err) {
-            return res.status(500).json({ success: false, error: 'Ошибка БД' });
-        }
-
-        res.json({ success: true, message: 'Права администратора удалены' });
-    });
-});
-
-// SPA роут с проверкой Telegram
-app.get('*', checkTelegramOrigin, (req, res) => {
+// SPA роут
+app.get('*', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
@@ -696,4 +479,3 @@ app.listen(PORT, '0.0.0.0', () => {
     console.log(`📍 http://localhost:${PORT}`);
     console.log('================================');
 });
-
